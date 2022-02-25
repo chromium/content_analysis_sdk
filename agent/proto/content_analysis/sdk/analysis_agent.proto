@@ -1,0 +1,101 @@
+// Copyright 2022 The Chromium Authors.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+syntax = "proto2";
+
+option optimize_for = LITE_RUNTIME;
+
+package content_analysis.sdk;
+
+// The values in this enum can be extended in future versions of Chrome to
+// support new analysis triggers.
+enum AnalysisConnector {
+  ANALYSIS_CONNECTOR_UNSPECIFIED = 0;
+  FILE_DOWNLOADED = 1;
+  FILE_ATTACHED = 2;
+  BULK_DATA_ENTRY = 3;
+  PRINT = 4;
+}
+
+message ContentMetaData {
+  // The URL containing the file download/upload or to which web content is
+  // being uploaded.
+  optional string url = 1;
+
+  // Name of file on user system (if applicable).
+  optional string filename = 2;
+
+  // Sha256 digest of file.
+  optional string digest = 3;
+
+  reserved 4, 5, 6;
+}
+
+// The data to analyze in the request.  These fields are mutually exclusive,
+// only one will be set in any content analysis request.
+message ContentData {
+  optional string text_content = 1;
+  optional string file_path = 2;
+}
+
+// Analysis request sent from Google Chrome to agent.
+message ContentAnalysisRequest {
+  // Which analysis trigger fired this request.
+  optional AnalysisConnector analysis_connector = 9;
+
+  // Information about the data that triggered the content analysis request.
+  optional ContentMetaData request_data = 10;
+
+  // The actual data to be analyzed.
+  optional ContentData content_data = 100;
+
+  // Token used to correlate requests and responses.
+  optional string request_token = 5;
+
+  // The tags configured for the URL that triggered the content analysis.
+  repeated string tags = 11;
+
+  reserved 1 to 4, 6 to 8, 12;
+}
+
+// Verdict response sent from agent to Google Chrome.
+message ContentAnalysisResponse {
+  // Token used to correlate requests and responses. Corresponds to field in
+  // ContentAnalysisRequest with the same name.
+  optional string request_token = 1;
+
+  // Represents the analysis result from a given tag.
+  message Result {
+    optional string tag = 1;
+
+    // The status of this result.
+    enum Status {
+      STATUS_UNKNOWN = 0;
+      SUCCESS = 1;
+      FAILURE = 2;
+    }
+    optional Status status = 2;
+
+    // Identifies the detection rules that were triggered by the analysis.
+    // Only relevant when status is SUCCESS.
+    message TriggeredRule {
+      enum Action {
+        ACTION_UNSPECIFIED = 0;
+        REPORT_ONLY = 1;
+        WARN = 2;
+        BLOCK = 3;
+      }
+      optional Action action = 1;
+      optional string rule_name = 2;
+      optional string rule_id = 3;
+      reserved 4;
+    }
+    repeated TriggeredRule triggered_rules = 3;
+
+    reserved 4 to 7;
+  }
+  repeated Result results = 4;
+
+  reserved 2 to 3;
+}
