@@ -14,15 +14,15 @@ manager.
 
 The demo below use the Microsoft [vcpkg](https://github.com/microsoft/vcpkg)
 package manager to install protobuf.  vcpkg is available on all supported
-platforms.  See the demo for mode details.
+platforms.  See the demo for more details.
 
 ## Adding the SDK into an agent
 
 Add the SDK to a content analysis agent as follows:
 
 1. Clone the SDK from [Github](https://github.com/chromium/content_analysis_sdk).
-For purposes of this document it will be assume that the SDK is downloaded and
-extracted into the directory $SDK_DIR.
+This document assumes that the SDK is downloaded and extracted into the
+directory $SDK_DIR.
 
 2. Add the directory $SDK_DIR/include to the include path of the agent
 code base.
