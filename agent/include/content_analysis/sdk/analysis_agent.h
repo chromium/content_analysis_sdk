@@ -124,7 +124,7 @@ class Agent {
 };
 
 // Update the tag or status of `response`.  This function assumes that the
-// response contains only one Result.  If one already exiits it is updated
+// response contains only one Result.  If one already exists it is updated
 // otherwise a new Result is created.
 //
 // If `tag` is not empty it will replace the result's tag.
