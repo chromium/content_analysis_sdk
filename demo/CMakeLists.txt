@@ -5,6 +5,8 @@ cmake_minimum_required(VERSION 3.22)
 
 project(chrome_enterprise_connector_local_analysis)
 
+include(build/vcpkg/scripts/buildsystems/vcpkg.cmake)
+
 find_package(Protobuf CONFIG REQUIRED)
 
 # The include directory contains the header files needed by the demo code.
