@@ -3,9 +3,9 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-# This script is meant to be run once to setup the example demo client.
+# This script is meant to be run once to setup the example demo agent.
 # Run it with one command line argument: the path to a directory where the
-# demo client will be built.  This should be a directory outside the SDK
+# demo agent will be built.  This should be a directory outside the SDK
 # directory tree.  This directory must not already exist.
 #
 # Once the build is prepared, the demo binary is build using the command
@@ -15,8 +15,8 @@
 set -euo pipefail
 
 export BUILD_DIR=$(realpath $1)
-export ROOT_DIR=$(realpath $(dirname $0)/../..)
-export DEMO_DIR=$(realpath $ROOT_DIR/agent/demo)
+export ROOT_DIR=$(realpath $(dirname $0)/..)
+export DEMO_DIR=$(realpath $ROOT_DIR/demo)
 export PROTO_DIR=$(realpath  $ROOT_DIR/proto)
 
 echo Root dir:   $ROOT_DIR
