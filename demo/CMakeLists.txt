@@ -5,6 +5,10 @@ cmake_minimum_required(VERSION 3.22)
 
 project(chrome_enterprise_connector_local_analysis)
 
+<<<<<<< HEAD
+=======
+# Makes available the package definitions in vcpkg.
+>>>>>>> ca8cc46 (move demo dir into project root)
 include(build/vcpkg/scripts/buildsystems/vcpkg.cmake)
 
 find_package(Protobuf CONFIG REQUIRED)
