@@ -17,11 +17,6 @@ set BUILD_DIR=%~f1
 set DEMO_DIR=%~dp0
 call :ABSPATH "%DEMO_DIR%..\.." ROOT_DIR
 call :ABSPATH "%ROOT_DIR%\proto" PROTO_DIR
-<<<<<<< HEAD
-call :ABSPATH "%DEMO_DIR%..\proto\content_analysis\sdk" PROTO_DIR
-call :ABSPATH "%PROTO_DIR%..\..\.." PROTO_ROOT_DIR
-=======
->>>>>>> 7e00a7e (move proto dir into project root)
 
 echo .
 echo Root dir:   %ROOT_DIR%
