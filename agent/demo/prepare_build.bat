@@ -15,14 +15,16 @@ REM to this script.
 
 set BUILD_DIR=%~f1
 set DEMO_DIR=%~dp0
+call :ABSPATH "%DEMO_DIR%..\.." ROOT_DIR
+call :ABSPATH "%ROOT_DIR%\proto" PROTO_DIR
 call :ABSPATH "%DEMO_DIR%..\proto\content_analysis\sdk" PROTO_DIR
 call :ABSPATH "%PROTO_DIR%..\..\.." PROTO_ROOT_DIR
 
 echo .
+echo Root dir:   %ROOT_DIR%
 echo Build dir:  %BUILD_DIR%
 echo Demo dir:   %DEMO_DIR%
 echo Proto dir:  %PROTO_DIR%
-echo Proto root: %PROTO_ROOT_DIR%
 echo .
 
 IF exist "%BUILD_DIR%" (
@@ -44,8 +46,8 @@ REM Generate proto files.
 mkdir gen
 .\vcpkg\installed\x64-windows\tools\protobuf\protoc.exe ^
   --cpp_out=gen ^
-  --proto_path=%PROTO_ROOT_DIR% ^
-  %PROTO_DIR%\analysis_agent.proto
+  --proto_path=%PROTO_DIR% ^
+  %PROTO_DIR%\content_analysis\sdk\analysis.proto
 
 REM Generate the build files.
 set CMAKE_TOOLCHAIN_FILE=./vcpkg/scripts/buildsystems/vcpkg.cmake
