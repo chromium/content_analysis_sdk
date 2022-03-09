@@ -1,2 +1,7 @@
 .vscode/
+<<<<<<< HEAD
 build/
+=======
+.ccls-cache/
+build/
+>>>>>>> 7026f8d (add ccls-cache to gitignore (vscode cmake extension))
