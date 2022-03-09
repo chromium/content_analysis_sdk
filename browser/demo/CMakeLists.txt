@@ -37,7 +37,7 @@ add_library(cac
   ../src/client_base.cc
   ../src/client_base.h
   ${PLATFORM_CODE}
-  "${PROJECT_BINARY_DIR}/gen/content_analysis/sdk/analysis_agent.pb.cc"
+  "${PROJECT_BINARY_DIR}/gen/content_analysis/sdk/analysis.pb.cc"
 )
 target_link_libraries(cac PUBLIC protobuf::libprotoc protobuf::libprotobuf protobuf::libprotobuf-lite)
 

@@ -8,7 +8,7 @@
 #include <memory>
 #include <string>
 
-#include "content_analysis/sdk/analysis_agent.pb.h"
+#include "content_analysis/sdk/analysis.pb.h"
 
 // This is the main include file for code using Content Analysis Connector
 // Agent SDK.  No other include is needed.

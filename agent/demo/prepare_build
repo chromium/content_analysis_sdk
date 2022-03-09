@@ -15,14 +15,14 @@
 set -euo pipefail
 
 export BUILD_DIR=$(realpath $1)
-export DEMO_DIR=$(realpath $(dirname $0))
-export PROTO_DIR=$(realpath  $DEMO_DIR/../proto/content_analysis/sdk)
-export PROTO_ROOT_DIR=$(realpath  $PROTO_DIR/../..)
+export ROOT_DIR=$(realpath $(dirname $0)/../..)
+export DEMO_DIR=$(realpath $ROOT_DIR/agent/demo)
+export PROTO_DIR=$(realpath  $ROOT_DIR/proto)
 
+echo Root dir:   $ROOT_DIR
 echo Build dir:  $BUILD_DIR
 echo Demo dir:   $DEMO_DIR
 echo Proto dir:  $PROTO_DIR
-echo Proto root: $PROTO_ROOT_DIR
 
 test -d $BUILD_DIR && (
   echo ""
@@ -44,8 +44,8 @@ test -d vcpkg || (
 mkdir -p gen
 ./vcpkg/installed/x64-linux/tools/protobuf/protoc \
   --cpp_out=gen \
-  --proto_path=$PROTO_ROOT_DIR \
-  $PROTO_DIR/analysis_agent.proto
+  --proto_path=$PROTO_DIR \
+  $PROTO_DIR/content_analysis/sdk/analysis.proto
 
 # Generate the build files.
 export CMAKE_TOOLCHAIN_FILE=./vcpkg/scripts/buildsystems/vcpkg.cmake
