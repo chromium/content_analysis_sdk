@@ -59,8 +59,8 @@ First get things ready by installing required dependencies:
 $SDK_DIR/demo/prepare_build <build-dir>
 ```
 where `<build-dir>` is the path to a directory where the demo will be built.
-This directory must not exist. If building within the source tree, it is
-recommended to use a directory named `build` (eg: `/demo/build`). Any changes
+This directory must not already exist. If building within the source tree, it is
+recommended to use a directory named `build` (eg: `/demo/build`). Any output
 within the `build/` directory will be ignored by version control.
 
 `prepare_build` performs the following steps:
