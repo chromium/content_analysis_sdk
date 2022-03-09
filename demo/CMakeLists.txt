@@ -69,7 +69,7 @@ add_library(cac_agent
   "${PROJECT_BINARY_DIR}/gen/content_analysis/sdk/analysis.pb.cc"
 )
 target_link_libraries(cac_agent PUBLIC protobuf::libprotoc protobuf::libprotobuf protobuf::libprotobuf-lite)
-target_include_directoreies(cac_agent ${AGENT_INCLUDES})
+target_include_directories(cac_agent PRIVATE ${AGENT_INCLUDES})
 # Builds the content analysis connector browser linker library.  This library is linked
 # into the client in order to send content analysis requests to the agent.
 add_library(cac_browser
@@ -84,10 +84,10 @@ target_link_libraries(cac_browser PUBLIC protobuf::libprotoc protobuf::libprotob
 
 # The demo agent executable.
 add_executable(agent agent.cc)
-target_include_directories(agent ${AGENT_INCLUDES})
+target_include_directories(agent PRIVATE ${AGENT_INCLUDES})
 target_link_libraries(agent PRIVATE cac_agent)
 
 # The demo client executable.
 add_executable(browser client.cc)
-target_include_directories(browser ${BROWSER_INCLUDES})
+target_include_directories(browser PRIVATE ${BROWSER_INCLUDES})
 target_link_libraries(browser PRIVATE cac_browser)
