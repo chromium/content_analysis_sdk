@@ -13,11 +13,11 @@ find_package(Protobuf CONFIG REQUIRED)
 # The include directory contains the header files needed by the demo code.
 # The gen directory contains generated protobuf headers describing the request
 # and response objects used to communicate with Google Chrome.
-set(AGENT_INCLUDES,
+set(AGENT_INCLUDES
   "${PROJECT_SOURCE_DIR}/../agent/include"
   "${PROJECT_BINARY_DIR}/gen"
 )
-set(BROWSER_INCLUDES,
+set(BROWSER_INCLUDES
   "${PROJECT_SOURCE_DIR}/../browser/include"
   "${PROJECT_BINARY_DIR}/gen"
 )
@@ -79,7 +79,7 @@ add_library(cac_browser
   ${PLATFORM_BROWSER_CODE}
   "${PROJECT_BINARY_DIR}/gen/content_analysis/sdk/analysis.pb.cc"
 )
-target_include_directories(cac_browser ${BROWSER_INCLUDES})
+target_include_directories(cac_browser PRIVATE ${BROWSER_INCLUDES})
 target_link_libraries(cac_browser PUBLIC protobuf::libprotoc protobuf::libprotobuf protobuf::libprotobuf-lite)
 
 # The demo agent executable.
