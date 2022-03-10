@@ -15,7 +15,7 @@ REM to this script.
 
 set BUILD_DIR=%~f1
 set DEMO_DIR=%~dp0
-call :ABSPATH "%DEMO_DIR%..\.." ROOT_DIR
+call :ABSPATH "%DEMO_DIR%.." ROOT_DIR
 call :ABSPATH "%ROOT_DIR%\proto" PROTO_DIR
 
 echo .
