@@ -31,6 +31,8 @@ add_custom_target(proto ALL DEPENDS ${PROJECT_BINARY_DIR}/gen/content_analysis/s
 set(PROTO_COMPILED_SRCS "")
 foreach(PROTO
   content_analysis/sdk/analysis
+  content_analysis/sdk/handshake
+  content_analysis/sdk/acknowledgement
 )
   file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/gen)
   add_custom_command(
