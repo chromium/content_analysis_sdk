@@ -20,6 +20,7 @@ foreach(PROTO
   content_analysis/sdk/handshake
   content_analysis/sdk/acknowledgement
 )
+  file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/gen)
   # Calls the protoc compiler using the arguments specific to this project
   # protobuf_generate_cpp is not flexible enough for our needs.
   add_custom_command(
