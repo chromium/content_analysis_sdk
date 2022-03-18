@@ -5,15 +5,10 @@ cmake_minimum_required(VERSION 3.22)
 
 project(chrome_enterprise_connector_local_analysis)
 
-# Makes available the package definitions in vcpkg.
-include("${PROJECT_BINARY_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake")
-
-find_package(Protobuf CONFIG REQUIRED)
-
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   set(PROTOC ${PROJECT_BINARY_DIR}/vcpkg/installed/x64-windows/tools/protobuf/protoc.exe)
 else()
-  set(PROTOC ${PROJECT_BINARY_DIR}/vcpkg/installed/x64-windows/tools/protobuf/protoc)
+  set(PROTOC ${PROJECT_BINARY_DIR}/vcpkg/installed/x64-linux/tools/protobuf/protoc)
 endif()
 
 set(PROTO_COMPILED_SRCS "")
@@ -81,6 +76,10 @@ else()
     ../browser/src/client_posix.h
   )
 endif()
+
+# Makes available the package definitions in vcpkg.
+include("${PROJECT_BINARY_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake")
+find_package(Protobuf CONFIG REQUIRED)
 
 # Builds the content analysis connector agent linker library.  This library is linked
 # into the agent in order to listen for and process content analysis requests
