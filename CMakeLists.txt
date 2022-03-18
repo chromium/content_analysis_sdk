@@ -31,7 +31,7 @@ add_custom_target(proto ALL DEPENDS ${PROJECT_BINARY_DIR}/gen/content_analysis/s
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   set(PROTOC ${PROJECT_BINARY_DIR}/vcpkg/installed/x64-windows/tools/protobuf/protoc.exe)
 else()
-  set(PROTOC ${PROJECT_BINARY_DIR}/vcpkg/installed/x64-windows/tools/protobuf/protoc)
+  set(PROTOC ${PROJECT_BINARY_DIR}/vcpkg/installed/x64-linux/tools/protobuf/protoc)
 endif()
 
 set(PROTO_COMPILED_SRCS "")
