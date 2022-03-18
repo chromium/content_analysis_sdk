@@ -10,6 +10,12 @@ include("${PROJECT_BINARY_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake")
 
 find_package(Protobuf CONFIG REQUIRED)
 
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+  set(PROTOC ${PROJECT_BINARY_DIR}/vcpkg/installed/x64-windows/tools/protobuf/protoc.exe)
+else()
+  set(PROTOC ${PROJECT_BINARY_DIR}/vcpkg/installed/x64-windows/tools/protobuf/protoc)
+endif()
+
 set(PROTO_COMPILED_SRCS "")
 foreach(PROTO
   content_analysis/sdk/analysis
@@ -18,7 +24,7 @@ foreach(PROTO
   add_custom_command(
     OUTPUT ${PROJECT_BINARY_DIR}/gen/${PROTO}.pb.cc
     COMMAND
-      ./vcpkg/installed/x64-linux/tools/protobuf/protoc
+      ${PROTOC}
       --cpp_out=gen
       --proto_path=${PROJECT_SOURCE_DIR}/../proto
       ${PROJECT_SOURCE_DIR}/../proto/${PROTO}.proto
