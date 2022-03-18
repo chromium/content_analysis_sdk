@@ -28,7 +28,6 @@ add_custom_command(
 # `cmake --build <build_dir> --target proto`
 add_custom_target(proto ALL DEPENDS ${PROJECT_BINARY_DIR}/gen/content_analysis/sdk/analysis.pb.cc)
 
-
 # The include directory contains the header files needed by the demo code.
 # The gen directory contains generated protobuf headers describing the request
 # and response objects used to communicate with Google Chrome.
