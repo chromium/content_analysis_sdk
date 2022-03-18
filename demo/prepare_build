@@ -40,13 +40,6 @@ test -d vcpkg || (
   ./vcpkg/vcpkg install protobuf
 )
 
-# Generate proto files.
-mkdir -p gen
-./vcpkg/installed/x64-linux/tools/protobuf/protoc \
-  --cpp_out=gen \
-  --proto_path=$PROTO_DIR \
-  $PROTO_DIR/content_analysis/sdk/analysis.proto
-
 # Generate the build files.
 export CMAKE_TOOLCHAIN_FILE=./vcpkg/scripts/buildsystems/vcpkg.cmake
 cmake $DEMO_DIR

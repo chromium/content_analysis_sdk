@@ -10,6 +10,24 @@ include("${PROJECT_BINARY_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake")
 
 find_package(Protobuf CONFIG REQUIRED)
 
+set(PROTO_COMPILED_SRCS "")
+foreach(PROTO
+  content_analysis/sdk/analysis
+)
+  file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/gen)
+  add_custom_command(
+    OUTPUT ${PROJECT_BINARY_DIR}/gen/${PROTO}.pb.cc
+    COMMAND
+      ./vcpkg/installed/x64-linux/tools/protobuf/protoc
+      --cpp_out=gen
+      --proto_path=${PROJECT_SOURCE_DIR}/../proto
+      ${PROJECT_SOURCE_DIR}/../proto/${PROTO}.proto
+    DEPENDS ../proto/${PROTO}.proto
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+  )
+  list(APPEND PROTO_COMPILED_SRCS ${PROJECT_BINARY_DIR}/gen/${PROTO}.pb.cc)
+endforeach()
+
 # The include directory contains the header files needed by the demo code.
 # The gen directory contains generated protobuf headers describing the request
 # and response objects used to communicate with Google Chrome.
@@ -66,7 +84,7 @@ add_library(cac_agent
   ../agent/src/session_base.cc
   ../agent/src/session_base.h
   ${PLATFORM_AGENT_CODE}
-  "${PROJECT_BINARY_DIR}/gen/content_analysis/sdk/analysis.pb.cc"
+  ${PROTO_COMPILED_SRCS}
 )
 target_link_libraries(cac_agent PUBLIC protobuf::libprotoc protobuf::libprotobuf protobuf::libprotobuf-lite)
 target_include_directories(cac_agent PRIVATE ${AGENT_INCLUDES})
@@ -77,7 +95,7 @@ add_library(cac_browser
   ../browser/src/client_base.cc
   ../browser/src/client_base.h
   ${PLATFORM_BROWSER_CODE}
-  "${PROJECT_BINARY_DIR}/gen/content_analysis/sdk/analysis.pb.cc"
+  ${PROTO_COMPILED_SRCS}
 )
 target_include_directories(cac_browser PRIVATE ${BROWSER_INCLUDES})
 target_link_libraries(cac_browser PUBLIC protobuf::libprotoc protobuf::libprotobuf protobuf::libprotobuf-lite)
