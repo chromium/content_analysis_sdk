@@ -5,6 +5,7 @@ cmake_minimum_required(VERSION 3.22)
 
 project(chrome_enterprise_connector_local_analysis)
 
+# Set the path to the protoc protobuf compiler.
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   set(PROTOC ${PROJECT_BINARY_DIR}/vcpkg/installed/x64-windows/tools/protobuf/protoc.exe)
 else()
