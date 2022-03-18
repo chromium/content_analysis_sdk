@@ -28,6 +28,24 @@ add_custom_command(
 # `cmake --build <build_dir> --target proto`
 add_custom_target(proto ALL DEPENDS ${PROJECT_BINARY_DIR}/gen/content_analysis/sdk/analysis.pb.cc)
 
+set(PROTO_COMPILED_SRCS "")
+foreach(PROTO
+  content_analysis/sdk/analysis
+)
+  file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/gen)
+  add_custom_command(
+    OUTPUT ${PROJECT_BINARY_DIR}/gen/${PROTO}.pb.cc
+    COMMAND
+      ./vcpkg/installed/x64-linux/tools/protobuf/protoc
+      --cpp_out=gen
+      --proto_path=${PROJECT_SOURCE_DIR}/../proto
+      ${PROJECT_SOURCE_DIR}/../proto/${PROTO}.proto
+    DEPENDS ../proto/${PROTO}.proto
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+  )
+  list(APPEND PROTO_COMPILED_SRCS ${PROJECT_BINARY_DIR}/gen/${PROTO}.pb.cc)
+endforeach()
+
 # The include directory contains the header files needed by the demo code.
 # The gen directory contains generated protobuf headers describing the request
 # and response objects used to communicate with Google Chrome.
