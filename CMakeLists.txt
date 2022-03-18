@@ -34,32 +34,6 @@ else()
   set(PROTOC ${PROJECT_BINARY_DIR}/vcpkg/installed/x64-linux/tools/protobuf/protoc)
 endif()
 
-# A list of .pb.cc files. Will append to this list as we process each proto 
-set(PROTO_COMPILED_SRCS "")
-# Loop through each proto and compile using protoc
-foreach(PROTO
-  content_analysis/sdk/analysis
-  content_analysis/sdk/handshake
-  content_analysis/sdk/acknowledgement
-)
-  file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/gen)
-  # Calls the protoc compiler using the arguments specific to this project
-  # protobuf_generate_cpp is not flexible enough for our needs.
-  add_custom_command(
-    OUTPUT ${PROJECT_BINARY_DIR}/gen/${PROTO}.pb.cc
-    COMMAND
-      ${PROTOC}
-      --cpp_out=gen
-      --proto_path=${PROJECT_SOURCE_DIR}/../proto
-      ${PROJECT_SOURCE_DIR}/../proto/${PROTO}.proto
-    DEPENDS ../proto/${PROTO}.proto
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-  )
-  # Append the path of the compiled .pb.cc files to PROTO_COMPILED_SRCS
-  list(APPEND PROTO_COMPILED_SRCS ${PROJECT_BINARY_DIR}/gen/${PROTO}.pb.cc)
-endforeach()
-
-
 # The include directory contains the header files needed by the demo code.
 # The gen directory contains generated protobuf headers describing the request
 # and response objects used to communicate with Google Chrome.
