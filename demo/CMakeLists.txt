@@ -20,14 +20,13 @@ foreach(PROTO
   content_analysis/sdk/handshake
   content_analysis/sdk/acknowledgement
 )
-  file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/gen)
   # Calls the protoc compiler using the arguments specific to this project
   # protobuf_generate_cpp is not flexible enough for our needs.
   add_custom_command(
     OUTPUT ${PROJECT_BINARY_DIR}/gen/${PROTO}.pb.cc
     COMMAND
       ${PROTOC}
-      --cpp_out=gen
+      --cpp_out=${PROJECT_BINARY_DIR}/gen
       --proto_path=${PROJECT_SOURCE_DIR}/../proto
       ${PROJECT_SOURCE_DIR}/../proto/${PROTO}.proto
     DEPENDS ../proto/${PROTO}.proto
@@ -37,6 +36,7 @@ foreach(PROTO
   list(APPEND PROTO_COMPILED_SRCS ${PROJECT_BINARY_DIR}/gen/${PROTO}.pb.cc)
 endforeach()
 
+add_custom_target(protos ALL DEPENDS ${PROTO_COMPILED_SRCS})
 
 # The include directory contains the header files needed by the demo code.
 # The gen directory contains generated protobuf headers describing the request

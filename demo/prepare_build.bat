@@ -33,6 +33,7 @@ IF exist "%BUILD_DIR%" (
 )
 
 mkdir "%BUILD_DIR%"
+mkdir "%BUILD_DIR%\gen"
 cd /d "%BUILD_DIR%"
 
 REM Install vcpkg and use it to install Google Protocol Buffers.
