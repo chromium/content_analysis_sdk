@@ -28,9 +28,13 @@ echo Proto dir:  $PROTO_DIR
 
 # Prepare build directory
 mkdir -p $BUILD_DIR
+<<<<<<< HEAD:prepare_build
 # Prepare protobuf out directory
 mkdir -p $BUILD_DIR/gen
 # Enter build directory
+=======
+mkdir -p $BUILD_DIR/gen
+>>>>>>> a445de0 (add protos build target to CMakeLists):demo/prepare_build
 cd $BUILD_DIR
 
 # Install vcpkg and use it to install Google Protocol Buffers.

@@ -34,9 +34,13 @@ echo .
 
 REM Prepare build directory
 mkdir "%BUILD_DIR%"
+<<<<<<< HEAD:prepare_build.bat
 REM Prepare protobuf out directory
 mkdir "%BUILD_DIR%\gen"
 REM Enter build directory
+=======
+mkdir "%BUILD_DIR%\gen"
+>>>>>>> a445de0 (add protos build target to CMakeLists):demo/prepare_build.bat
 cd /d "%BUILD_DIR%"
 
 REM Install vcpkg and use it to install Google Protocol Buffers.
