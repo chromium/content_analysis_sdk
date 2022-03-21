@@ -13,13 +13,18 @@ providers for the Google Chrome Content Analysis Connector.  The code that must
 be compiled and linked into the content analysis agent is located in the `agent`
 subdirectory.
 
+<<<<<<< HEAD
 A demo implementation of a service provider is located in the `demo` subdirectory.
+=======
+A demo implementation of a service provider is locaed in the `demo` subdirectory.
+>>>>>>> 570d9c1 (update READMEs and add some comments)
 
 The code that must be compiled and linked into Google Chrome is located in
 the `browser` subdirectory.
 
 The Protocol Buffer serialization format is used to serialize messages between the
 browser and the agent. The protobuf definitions used can be found in the `proto`
+<<<<<<< HEAD
 subdirectory.
 
 ## Google Protocol Buffers
@@ -68,3 +73,6 @@ be ignored by version control.
 To build the demo run the command `cmake --build <build-dir>`.
 
 To build the protocol buffer targets run the command `cmake --build <build-dir> --target proto`
+=======
+subdirectory.
+>>>>>>> 570d9c1 (update READMEs and add some comments)
