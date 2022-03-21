@@ -12,6 +12,8 @@ using content_analysis::sdk::Agent;
 using content_analysis::sdk::Session;
 using content_analysis::sdk::ContentAnalysisRequest;
 using content_analysis::sdk::ContentAnalysisResponse;
+using content_analysis::sdk::Acknowledgement;
+using content_analysis::sdk::Handshake;
 
 void DumpRequest(const ContentAnalysisRequest& request) {
   std::string connector = "<Unknown>";
@@ -134,6 +136,10 @@ void AnalyzeContent(std::unique_ptr<Session> session) {
   if (session->Send() != 0) {
     std::cout << "[Demo] Error sending response" << std::endl;
   }
+
+  if (session->GetAcknowledgement().status() != Acknowledgement::Status::Acknowledgement_Status_SUCCESS) {
+    std::cout << "[Demo] Did not receive successful acknowledgement" << std::endl;
+  }
 }
 
 int main(int argc, char* argv[]) {
@@ -151,6 +157,25 @@ int main(int argc, char* argv[]) {
     if (!session) {
       std::cout << "[Demo] Error starting session" << std::endl;
       return 1;
+    }
+
+    if (session->GetRequest().has_handshake()) {
+      // If the request handshake has status success, the response handshake is also success.
+      if (session->GetRequest().handshake().status() != Handshake::Status::Handshake_Status_SUCCESS) {
+        std::cout << "[Demo] Received handshake failure" << std::endl;
+        session->GetResponse().mutable_handshake()->set_status(Handshake::Status::Handshake_Status_FAILURE);
+      }
+      // Otherwise the response handshake status is failure.
+      else {
+        std::cout << "[Demo] Received handshake success" << std::endl;
+        session->GetResponse().mutable_handshake()->set_status(Handshake::Status::Handshake_Status_SUCCESS);
+      }
+      // Send back a handshake back to Google Chrome.
+      if (session->Send() != 0) {
+        std::cout << "[Demo] Error sending back handshake" << std::endl;
+      }
+      // Continue to next session
+      continue;
     }
 
     // If the agent is capable of analyzing content in the background, the

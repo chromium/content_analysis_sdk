@@ -9,6 +9,8 @@
 #include <string>
 
 #include "content_analysis/sdk/analysis.pb.h"
+#include "content_analysis/sdk/handshake.pb.h"
+#include "content_analysis/sdk/acknowledgement.pb.h"
 
 // This is the main include file for code using Content Analysis Connector
 // Client SDK.  No other include is needed.
@@ -45,6 +47,11 @@ class Client {
   virtual int Send(const ContentAnalysisRequest& request,
                    ContentAnalysisResponse* response) = 0;
 
+  // Sets an analysis request to the agent and waits for a response.
+  virtual int Send(const ContentAnalysisRequest& request,
+                   ContentAnalysisResponse* response,
+                   Handshake* handshake) = 0;
+
  protected:
   Client() = default;
   Client(const Client& rhs) = delete;
@@ -52,6 +59,9 @@ class Client {
   Client& operator=(const Client& rhs) = delete;
   Client& operator=(Client&& rhs) = delete;
 };
+
+bool IsSuccessfulHandshake(const ContentAnalysisRequest& request,
+                           const ContentAnalysisResponse& response);
 
 }  // namespace sdk
 }  // namespace content_analysis

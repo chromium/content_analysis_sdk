@@ -9,6 +9,8 @@
 using content_analysis::sdk::Client;
 using content_analysis::sdk::ContentAnalysisRequest;
 using content_analysis::sdk::ContentAnalysisResponse;
+using content_analysis::sdk::Handshake;
+using content_analysis::sdk::Acknowledgement;
 
 // Paramters used to build the request.
 content_analysis::sdk::AnalysisConnector connector =
@@ -100,16 +102,33 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
+  // Prepare handshake request
+  ContentAnalysisRequest handshake_request;
+  // Set handshake status to success
+  handshake_request.mutable_handshake()->set_status(Handshake::Status::Handshake_Status_SUCCESS);
+  // Prepare handshake response
+  ContentAnalysisResponse handshake_response;
+  // Send handshake request and receive handshake response
+  int err = client->Send(handshake_request, &handshake_response);
+  if (err != 0) {
+    std::cout << "[Demo] Error sending handshake" << std::endl;
+    return 1;
+  }
+  if (!IsSuccessfulHandshake(handshake_request, handshake_response)) {
+    std::cout << "[Demo] Did not receive back handshake success" << std::endl;
+    return 1;
+  }
+
   ContentAnalysisRequest request;
   request.set_analysis_connector(connector);
   request.set_request_token(request_token);
   *request.add_tags() = tag;
 
-  auto requst_data = request.mutable_request_data();
-  requst_data->set_url(url);
-  requst_data->set_digest(digest);
+  auto request_data = request.mutable_request_data();
+  request_data->set_url(url);
+  request_data->set_digest(digest);
   if (!filename.empty()) {
-    requst_data->set_filename(filename);
+    request_data->set_filename(filename);
   }
 
   auto content_data = request.mutable_content_data();

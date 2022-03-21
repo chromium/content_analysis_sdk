@@ -57,9 +57,25 @@ int SessionWin::Send() {
   if (!response()->SerializeToString(&response_str))
     return -1;
 
+  // Send the response to the agent
   DWORD written;
   if (!WriteFile(hPipe_, response_str.data(), response_str.size(), &written,
                 nullptr)) {
+    return -1;
+  }
+
+  // Receive an acknowledgement from the agent.
+  // NOTE: assumption is that acknowledgement is never larger than this.
+  DWORD err = ERROR_SUCCESS;
+  std::vector<char> buffer(4096);
+  DWORD read;
+  if (ReadFile(handle, buffer.data(), buffer.size(), &read, nullptr)) {
+    acknowledgement->ParseFromString(buffer.data());
+  } else {
+    err = GetLastError();
+  }
+
+  if (err != ERROR_SUCCESS) {
     return -1;
   }
 

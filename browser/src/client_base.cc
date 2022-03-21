@@ -13,5 +13,15 @@ const Client::Uri& ClientBase::GetUri() const {
   return uri_;
 }
 
+bool IsSuccessfulHandshake(const ContentAnalysisRequest& request,
+                           const ContentAnalysisResponse& response) {
+  return
+    request.has_handshake() &&
+    response.has_handshake() &&
+      (request.handshake().status() ==
+        response.handshake().status() ==
+        Handshake::Status::Handshake_Status_SUCCESS);
+}
+
 }  // namespace sdk
 }  // namespace content_analysis

@@ -17,7 +17,6 @@ set(PROTO_COMPILED_SRCS "")
 # Loop through each proto and compile using protoc
 foreach(PROTO
   content_analysis/sdk/analysis
-  content_analysis/sdk/handshake
   content_analysis/sdk/acknowledgement
 )
   # Calls the protoc compiler using the arguments specific to this project

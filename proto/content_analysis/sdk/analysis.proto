@@ -18,6 +18,15 @@ enum AnalysisConnector {
   PRINT = 4;
 }
 
+message Handshake {
+  enum Status {
+    STATUS_UNKNOWN = 0;
+    SUCCESS = 1;
+    FAILURE = 2;
+  }
+  required Status status = 1;
+}
+
 message ContentMetaData {
   // The URL containing the file download/upload or to which web content is
   // being uploaded.
@@ -55,6 +64,9 @@ message ContentAnalysisRequest {
 
   // The tags configured for the URL that triggered the content analysis.
   repeated string tags = 11;
+
+  // Optional handshake message. If this is set, other optional fields should not be set.
+  optional Handshake handshake = 200;
 
   reserved 1 to 4, 6 to 8, 12;
 }
@@ -96,6 +108,9 @@ message ContentAnalysisResponse {
     reserved 4 to 7;
   }
   repeated Result results = 4;
+
+  // Optional handshake message. If this is set, other optional fields should not be set.
+  optional Handshake handshake = 200;
 
   reserved 2 to 3;
 }
