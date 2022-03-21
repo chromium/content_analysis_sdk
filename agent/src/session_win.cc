@@ -70,7 +70,7 @@ int SessionWin::Send() {
   std::vector<char> buffer(4096);
   DWORD read;
   if (ReadFile(handle, buffer.data(), buffer.size(), &read, nullptr)) {
-    acknowledgement->ParseFromString(buffer.data());
+    acknowledgement()->ParseFromString(buffer.data());
   } else {
     err = GetLastError();
   }
