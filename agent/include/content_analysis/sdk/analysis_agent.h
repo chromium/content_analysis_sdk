@@ -9,7 +9,6 @@
 #include <string>
 
 #include "content_analysis/sdk/analysis.pb.h"
-#include "content_analysis/sdk/handshake.pb.h"
 #include "content_analysis/sdk/acknowledgement.pb.h"
 
 // This is the main include file for code using Content Analysis Connector
