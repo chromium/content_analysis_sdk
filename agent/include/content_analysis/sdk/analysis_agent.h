@@ -71,13 +71,10 @@ class Session {
   virtual ContentAnalysisResponse& GetResponse() = 0;
 
   virtual const Acknowledgement& GetAcknowledgement() const = 0;
-  virtual Handshake& GetHandshake() = 0;
 
   // Send the verdict to Google Chrome.  Once this method is called further
   // changes to the response are ignored.
   virtual int Send() = 0;
-
-  virtual int SendHandshake() = 0;
 
  protected:
   Session() = default;
@@ -85,30 +82,6 @@ class Session {
   Session(Session&& rhs) = delete;
   Session& operator=(const Session& rhs) = delete;
   Session& operator=(Session&& rhs) = delete;
-};
-
-class HandshakeSession {
- public:
-  virtual ~HandshakeSession() = default;
-
-  // Prepares the HandshakeSession for graceful shutdown.  Upon return calls to all
-  // other methods of this class will fail.
-  virtual int Close() = 0;
-
-  // Retrieves a reference to a handshake that has been sent by Google Chrome.
-  // The agent may modify this response in place before calling Send.
-  virtual Handshake& GetHandshake() = 0;
-
-  // Send a handshake back to Google Chrome.  Once this method is called further
-  // changes to the handshake are ignored.
-  virtual int Send() = 0;
-
- protected:
-  HandshakeSession() = default;
-  HandshakeSession(const HandshakeSession& rhs) = delete;
-  HandshakeSession(HandshakeSession&& rhs) = delete;
-  HandshakeSession& operator=(const HandshakeSession& rhs) = delete;
-  HandshakeSession& operator=(HandshakeSession&& rhs) = delete;
 };
 
 // Represents an agent that can perform content analysis for the Google Chrome
