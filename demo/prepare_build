@@ -30,8 +30,11 @@ test -d $BUILD_DIR && (
   return 1 2>/dev/null || exit 1
 )
 
+# Prepare build directory
 mkdir -p $BUILD_DIR
+# Prepare protobuf out directory
 mkdir -p $BUILD_DIR/gen
+# Enter build directory
 cd $BUILD_DIR
 
 # Install vcpkg and use it to install Google Protocol Buffers.

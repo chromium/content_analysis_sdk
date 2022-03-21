@@ -32,8 +32,11 @@ IF exist "%BUILD_DIR%" (
   EXIT /b
 )
 
+REM Prepare build directory
 mkdir "%BUILD_DIR%"
+REM Prepare protobuf out directory
 mkdir "%BUILD_DIR%\gen"
+REM Enter build directory
 cd /d "%BUILD_DIR%"
 
 REM Install vcpkg and use it to install Google Protocol Buffers.
