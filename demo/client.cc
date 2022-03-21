@@ -10,7 +10,6 @@ using content_analysis::sdk::Client;
 using content_analysis::sdk::ContentAnalysisRequest;
 using content_analysis::sdk::ContentAnalysisResponse;
 using content_analysis::sdk::Handshake;
-using content_analysis::sdk::Acknowledgement;
 
 // Paramters used to build the request.
 content_analysis::sdk::AnalysisConnector connector =
