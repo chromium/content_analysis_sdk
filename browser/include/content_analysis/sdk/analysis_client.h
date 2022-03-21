@@ -46,11 +46,6 @@ class Client {
   virtual int Send(const ContentAnalysisRequest& request,
                    ContentAnalysisResponse* response) = 0;
 
-  // Sets an analysis request to the agent and waits for a response.
-  virtual int Send(const ContentAnalysisRequest& request,
-                   ContentAnalysisResponse* response,
-                   Handshake* handshake) = 0;
-
  protected:
   Client() = default;
   Client(const Client& rhs) = delete;
