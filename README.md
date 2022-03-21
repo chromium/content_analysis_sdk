@@ -13,7 +13,7 @@ providers for the Google Chrome Content Analysis Connector.  The code that must
 be compiled and linked into the content analysis agent is located in the `agent`
 subdirectory.
 
-A demo implementation of a service provider is locaed in the `demo` subdirectory.
+A demo implementation of a service provider is located in the `demo` subdirectory.
 
 The code that must be compiled and linked into Google Chrome is located in
 the `browser` subdirectory.
