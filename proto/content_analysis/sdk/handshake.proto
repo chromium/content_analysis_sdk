@@ -9,12 +9,10 @@ option optimize_for = LITE_RUNTIME;
 package content_analysis.sdk;
 
 message Handshake {
-  // Token used to correlate requests and responses. Corresponds to field in
-  // ContentAnalysisRequest with the same name.
   enum Status {
     STATUS_UNKNOWN = 0;
     SUCCESS = 1;
     FAILURE = 2;
   }
-  optional Status status = 1;
+  required Status status = 1;
 }
