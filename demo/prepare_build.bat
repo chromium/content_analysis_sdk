@@ -35,12 +35,10 @@ IF exist "%BUILD_DIR%" (
 mkdir "%BUILD_DIR%"
 cd /d "%BUILD_DIR%"
 
-REM Install vcpkg and use it to install Google Protocol Buffers & Google Test Framework.
+REM Install vcpkg and use it to install Google Protocol Buffers.
 cmd/c git clone https://github.com/microsoft/vcpkg
 cmd/c .\vcpkg\bootstrap-vcpkg.bat -disableMetrics
 cmd/c .\vcpkg\vcpkg install protobuf:x64-windows
-cmd/c .\vcpkg\vcpkg install gtest:x64-windows 
-
 
 REM Generate proto files.
 mkdir gen

@@ -56,10 +56,6 @@ else()
   )
 endif()
 
-# Unit tests
-enable_testing()
-include(GoogleTest)
-
 # Builds the content analysis connector agent linker library.  This library is linked
 # into the agent in order to listen for and process content analysis requests
 # from Google Chrome.

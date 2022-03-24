@@ -33,12 +33,11 @@ test -d $BUILD_DIR && (
 mkdir -p $BUILD_DIR
 cd $BUILD_DIR
 
-# Install vcpkg and use it to install Google Protocol Buffers & Google Test Framework.
+# Install vcpkg and use it to install Google Protocol Buffers.
 test -d vcpkg || (
   git clone https://github.com/microsoft/vcpkg
   ./vcpkg/bootstrap-vcpkg.sh -disableMetrics
   ./vcpkg/vcpkg install protobuf
-  ./vcpkg/vcpkg install gtest
 )
 
 # Generate proto files.
