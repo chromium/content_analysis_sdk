@@ -48,8 +48,6 @@ IF NOT exist .\vcpkg\ (
 )
 REM Install any packages we want from vcpkg.
 cmd/c .\vcpkg\vcpkg install protobuf:x64-windows
-cmd/c .\vcpkg\vcpkg install gtest:x64-windows 
-
 
 REM Generate the build files.
 set CMAKE_TOOLCHAIN_FILE=./vcpkg/scripts/buildsystems/vcpkg.cmake
