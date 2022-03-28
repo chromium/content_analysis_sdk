@@ -29,6 +29,10 @@ class SessionWin : public SessionBase {
  private:
   void Shutdown();
 
+  bool ReadRequest();
+  bool ReadAcknowledgement();
+  bool WriteResponse();
+
   HANDLE hPipe_ = INVALID_HANDLE_VALUE;
 };
 

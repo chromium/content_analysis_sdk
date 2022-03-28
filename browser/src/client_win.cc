@@ -64,21 +64,43 @@ int ClientWin::Send(const ContentAnalysisRequest& request,
     return -1;
   }
 
+  // Send the request from browser to agent
+  bool ack_failure = false;
   DWORD written;
   if (WriteFile(handle, request_str.data(), request_str.size(), &written,
                 nullptr)) {
+    // Receive the response from agent to browser
     // NOTE: assumption is that response is never larger than this.
     std::vector<char> buffer(4096);
     DWORD read;
     if (ReadFile(handle, buffer.data(), buffer.size(), &read, nullptr)) {
-      response->ParseFromString(buffer.data());
+
+      // Prepare an acknowledgement back from browser to agent
+      Acknowledgement ack;
+      if (response->ParseFromString(buffer.data())) {
+        // If the response was successfully parsed
+        // return status SUCCESS
+        ack.set_status(Acknowledgement_Status_SUCCESS);
+      } else {
+        // If the response was not successfully parsed
+        // return status FAILURE
+        ack.set_status(Acknowledgement_Status_FAILURE);
+        ack_failure = true;
+      }
+      std::string ack_str;
+      ack.SerializeToString(&ack_str);
+      DWORD ack_written;
+      // Send the acknowledgement down the pipe
+      if (!WriteFile(handle, ack_str.data(), ack_str.size(), &ack_written, nullptr)) {
+        err = GetLastError();
+      }
     } else {
       err = GetLastError();
     }
   }
 
   CloseHandle(handle);
-  return err == ERROR_SUCCESS ? 0 : -1;
+  return err == ERROR_SUCCESS && !ack_failure ? 0 : -1;
 }
 
 }  // namespace sdk

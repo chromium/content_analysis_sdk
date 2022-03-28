@@ -53,7 +53,8 @@ void DumpRequest(const ContentAnalysisRequest& request) {
       request.has_content_data() && request.content_data().has_file_path()
       ? request.content_data().file_path() : "None, bulk text entry";
 
-  std::cout << "Request: " << request.request_token() << std::endl;
+  std::cout << "Request:" << std::endl;
+  std::cout << "  Token: " << request.request_token() << std::endl;
   std::cout << "  Connector: " << connector << std::endl;
   std::cout << "  URL: " << url << std::endl;
   std::cout << "  Filename: " << filename << std::endl;
@@ -130,16 +131,19 @@ void AnalyzeContent(std::unique_ptr<Session> session) {
     std::cout << "  Verdict: allow" << std::endl;
   }
 
-  std::cout << std::endl;
-
   // Send the response back to Google Chrome.
   if (session->Send() != 0) {
     std::cout << "[Demo] Error sending response" << std::endl;
   }
 
   if (session->GetAcknowledgement().status() != Acknowledgement::Status::Acknowledgement_Status_SUCCESS) {
-    std::cout << "[Demo] Did not receive successful acknowledgement" << std::endl;
+    std::cout << "  Acknowledgement: Failure" << std::endl;
   }
+  else {
+    std::cout << "  Acknowledgement: Success" << std::endl;
+  }
+
+  std::cout << std::endl;
 }
 
 int main(int argc, char* argv[]) {
@@ -160,15 +164,16 @@ int main(int argc, char* argv[]) {
     }
 
     if (session->GetRequest().has_handshake()) {
+      std::cout << "Handshake:" << std::endl;
       // If the request handshake has status success, the response handshake is also success.
-      if (session->GetRequest().handshake().status() != Handshake::Status::Handshake_Status_SUCCESS) {
-        std::cout << "[Demo] Received handshake failure" << std::endl;
-        session->GetResponse().mutable_handshake()->set_status(Handshake::Status::Handshake_Status_FAILURE);
+      if (session->GetRequest().handshake().status() == Handshake::Status::Handshake_Status_SUCCESS) {
+        std::cout << "  Success" << std::endl;
+        session->GetResponse().mutable_handshake()->set_status(Handshake::Status::Handshake_Status_SUCCESS);
       }
       // Otherwise the response handshake status is failure.
       else {
-        std::cout << "[Demo] Received handshake success" << std::endl;
-        session->GetResponse().mutable_handshake()->set_status(Handshake::Status::Handshake_Status_SUCCESS);
+        std::cout << "  Failure" << std::endl;
+        session->GetResponse().mutable_handshake()->set_status(Handshake::Status::Handshake_Status_FAILURE);
       }
       // Send back a handshake back to Google Chrome.
       if (session->Send() != 0) {

@@ -35,9 +35,9 @@ foreach(PROTO
   list(APPEND PROTO_COMPILED_SRCS ${PROJECT_BINARY_DIR}/gen/${PROTO}.pb.cc)
 endforeach()
 
-# Define protos target. Compile this target exclusively by calling:
-# `cmake --build <build_dir> --target protos`
-add_custom_target(protos ALL DEPENDS ${PROTO_COMPILED_SRCS})
+# Define proto target. Compile this target exclusively by calling:
+# `cmake --build <build_dir> --target proto`
+add_custom_target(proto ALL DEPENDS ${PROTO_COMPILED_SRCS})
 
 # The include directory contains the header files needed by the demo code.
 # The gen directory contains generated protobuf headers describing the request
