@@ -142,7 +142,7 @@ int main(int argc, char* argv[]) {
   }
 
   ContentAnalysisResponse response;
-  err = client->Send(request, &response);
+  int err = client->Send(request, &response);
   if (err != 0) {
     std::cout << "[Demo] Error sending request" << std::endl;
     return 1;
