@@ -10,18 +10,24 @@ package content_analysis.sdk;
 
 // Handshake enum is sent with every message indicating the
 // status of the issuing browser or the agent
-enum Handshake {
-  STATUS_UNKNOWN = 0;
-  SUCCESS = 1;
-  FAILURE = 2;
+message Handshake {
+  enum Status {
+    STATUS_UNKNOWN = 0;
+    SUCCESS = 1;
+    FAILURE = 2;
+  }
+  required Status status = 1; 
 }
 
 // An Acknowledgment is sent from the browser to the agent
 // indicating whether the request was succeeded or failed.
-enum Acknowledgement {
-  STATUS_UNKNOWN = 0;
-  SUCCESS = 1;
-  FAILURE = 2;
+message Acknowledgement {
+  enum Status {
+    STATUS_UNKNOWN = 0;
+    SUCCESS = 1;
+    FAILURE = 2;
+  }
+  required Status status = 1;
 }
 
 // The values in this enum can be extended in future versions of Chrome to
