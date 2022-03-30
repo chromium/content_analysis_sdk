@@ -12,9 +12,7 @@ else()
   set(PROTOC ${PROJECT_BINARY_DIR}/vcpkg/installed/x64-linux/tools/protobuf/protoc)
 endif()
 
-# Loop through each proto and compile using protoc
-file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/gen)
-# Calls the protoc compiler using the arguments specific to this project
+# Calls the protoc compiler using the arguments specific to this project.
 # protobuf_generate_cpp is not flexible enough for our needs.
 add_custom_command(
   OUTPUT ${PROJECT_BINARY_DIR}/gen/content_analysis/sdk/analysis.pb.cc

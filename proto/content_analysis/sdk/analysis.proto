@@ -9,7 +9,7 @@ option optimize_for = LITE_RUNTIME;
 package content_analysis.sdk;
 
 // Handshake enum is sent with every message indicating the
-// status of the issuing browser or the agent
+// status of the issuing browser or the agent.
 message Handshake {
   enum Status {
     STATUS_UNKNOWN = 0;
