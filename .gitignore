@@ -2,3 +2,5 @@
 .ccls-cache/
 .cache/
 build/
+*.bak
+
