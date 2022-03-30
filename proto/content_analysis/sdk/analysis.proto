@@ -8,6 +8,24 @@ option optimize_for = LITE_RUNTIME;
 
 package content_analysis.sdk;
 
+message Handshake {
+  enum Status {
+    STATUS_UNKNOWN = 0;
+    SUCCESS = 1;
+    FAILURE = 2;
+  }
+  required Status status = 1;
+}
+
+message Acknowledgement {
+  enum Status {
+    STATUS_UNKNOWN = 0;
+    SUCCESS = 1;
+    FAILURE = 2;
+  }
+  required Status status = 1;
+}
+
 // The values in this enum can be extended in future versions of Chrome to
 // support new analysis triggers.
 enum AnalysisConnector {
