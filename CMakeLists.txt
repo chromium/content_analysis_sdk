@@ -77,6 +77,9 @@ endif()
 # Makes available the package definitions in vcpkg.
 include("${PROJECT_BINARY_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake")
 find_package(Protobuf CONFIG REQUIRED)
+# Unit tests
+enable_testing()
+include(GoogleTest)
 
 # Builds the content analysis connector agent linker library.  This library is linked
 # into the agent in order to listen for and process content analysis requests
