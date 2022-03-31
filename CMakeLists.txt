@@ -109,6 +109,11 @@ add_executable(agent ./demo/agent.cc)
 target_include_directories(agent PRIVATE ${AGENT_INCLUDES})
 target_link_libraries(agent PRIVATE cac_agent)
 
+# A demo agent that queues up requests for a background thread.
+add_executable(queued_agent ./demo/queued_agent.cc)
+target_include_directories(queued_agent PRIVATE ${AGENT_INCLUDES})
+target_link_libraries(queued_agent PRIVATE cac_agent)
+
 # The demo client executable.
 add_executable(browser ./demo/client.cc)
 target_include_directories(browser PRIVATE ${BROWSER_INCLUDES})
