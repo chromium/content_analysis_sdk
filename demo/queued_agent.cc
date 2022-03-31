@@ -22,44 +22,69 @@ using content_analysis::sdk::ContentAnalysisResponse;
 class RequestQueue {
  public:
   RequestQueue() {
-    InitializeConditionVariable(&cv_);
-    InitializeCriticalSection(&cs_);
+    Init();
   }
   ~RequestQueue() {}
 
   // Push a new content analysis session into the queue.
   void push(std::unique_ptr<Session> session) {
-    EnterCriticalSection(&cs_);
+    Enter();
     sessions_.push(std::move(session));
-    LeaveCriticalSection(&cs_);
-    WakeConditionVariable(&cv_);
+    Leave();
+    WakeOne();
   }
 
   // Pop the next request from the queue, blocking if necessary until a session
   // is available.  Returns a nullptr if the queue will produce no more
   // sessions.
   std::unique_ptr<Session> pop() {
-    EnterCriticalSection(&cs_);
+    Enter();
+
     while (!abort_ && sessions_.size() == 0)
-      SleepConditionVariableCS(&cv_, &cs_, INFINITE);
-    auto session = abort_ ? std::unique_ptr<Session> ()
-                          : std::move(sessions_.front());
-    sessions_.pop();
-    LeaveCriticalSection(&cs_);
+      Wait();
+
+    std::unique_ptr<Session> session;
+    if (!abort_) {
+      session = std::move(sessions_.front());
+      sessions_.pop();
+    }
+
+    Leave();
     return session;
   }
 
   // Marks the queue as aborted.  pop() will now return nullptr.
   void abort() {
-    EnterCriticalSection(&cs_);
+    Enter();
     abort_ = true;
-    LeaveCriticalSection(&cs_);
-    WakeAllConditionVariable(&cv_);
+    Leave();
+    WakeAll();
   }
 
  private:
+  void Init() {
+    InitializeConditionVariable(&cv_);
+    InitializeCriticalSection(&cs_);
+  }
+  void Enter() {
+    EnterCriticalSection(&cs_);
+  }
+  void Leave() {
+    LeaveCriticalSection(&cs_);
+  }
+  void Wait() {
+    SleepConditionVariableCS(&cv_, &cs_, INFINITE);
+  }
+  void WakeOne() {
+    WakeConditionVariable(&cv_);
+  }
+  void WakeAll() {
+    WakeAllConditionVariable(&cv_);
+  }
+
   CRITICAL_SECTION cs_;
   CONDITION_VARIABLE cv_;
+
   std::queue<std::unique_ptr<Session>> sessions_;
   bool abort_ = false;
 };
