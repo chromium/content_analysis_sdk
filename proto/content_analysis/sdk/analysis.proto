@@ -16,7 +16,7 @@ message Handshake {
     SUCCESS = 1;
     FAILURE = 2;
   }
-  required Status status = 1; 
+  optional Status status = 1; 
 }
 
 // An Acknowledgment is sent from the browser to the agent
@@ -27,7 +27,7 @@ message Acknowledgement {
     SUCCESS = 1;
     FAILURE = 2;
   }
-  required Status status = 1;
+  optional Status status = 1;
 }
 
 // The values in this enum can be extended in future versions of Chrome to
