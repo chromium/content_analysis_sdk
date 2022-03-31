@@ -10,13 +10,15 @@ REM demo agent will be built. This should be a directory outside the SDK
 REM directory tree. By default, if no directory is supplied, a directory
 REM named `build` in the project root will be used.
 REM
-REM Once the build is prepared, the demo binary is build using the command
+REM Once the build is prepared, the demo binary is built using the command
 REM `cmake --build <build-dir>`, where <build-dir> is the same argument given
 REM to this script.
 
 set ROOT_DIR=%~dp0
 call :ABSPATH "%ROOT_DIR%\demo" DEMO_DIR
 call :ABSPATH "%ROOT_DIR%\proto" PROTO_DIR
+
+REM BUILD_DIR defaults to $ROOT_DIR/build if no argument is provided.
 IF "%1" == "" (
   call :ABSPATH "%ROOT_DIR%\build" BUILD_DIR
 ) ELSE (
