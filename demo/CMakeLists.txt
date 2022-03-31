@@ -12,32 +12,22 @@ else()
   set(PROTOC ${PROJECT_BINARY_DIR}/vcpkg/installed/x64-linux/tools/protobuf/protoc)
 endif()
 
-# A list of .pb.cc files. Will append to this list as we process each proto 
-set(PROTO_COMPILED_SRCS "")
-# Loop through each proto and compile using protoc
-foreach(PROTO
-  content_analysis/sdk/analysis
-  content_analysis/sdk/acknowledgement
+# Calls the protoc compiler using the arguments specific to this project.
+# protobuf_generate_cpp is not flexible enough for our needs.
+add_custom_command(
+  OUTPUT ${PROJECT_BINARY_DIR}/gen/content_analysis/sdk/analysis.pb.cc
+  COMMAND
+    ${PROTOC}
+    --cpp_out=${PROJECT_BINARY_DIR}/gen
+    --proto_path=${PROJECT_SOURCE_DIR}/../proto
+    ${PROJECT_SOURCE_DIR}/../proto/content_analysis/sdk/analysis.proto
+  DEPENDS ../proto/content_analysis/sdk/analysis.proto
+  WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
 )
-  # Calls the protoc compiler using the arguments specific to this project
-  # protobuf_generate_cpp is not flexible enough for our needs.
-  add_custom_command(
-    OUTPUT ${PROJECT_BINARY_DIR}/gen/${PROTO}.pb.cc
-    COMMAND
-      ${PROTOC}
-      --cpp_out=${PROJECT_BINARY_DIR}/gen
-      --proto_path=${PROJECT_SOURCE_DIR}/../proto
-      ${PROJECT_SOURCE_DIR}/../proto/${PROTO}.proto
-    DEPENDS ../proto/${PROTO}.proto
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-  )
-  # Append the path of the compiled .pb.cc files to PROTO_COMPILED_SRCS
-  list(APPEND PROTO_COMPILED_SRCS ${PROJECT_BINARY_DIR}/gen/${PROTO}.pb.cc)
-endforeach()
 
-# Define protos target. Compile this target exclusively by calling:
-# `cmake --build <build_dir> --target protos`
-add_custom_target(protos ALL DEPENDS ${PROTO_COMPILED_SRCS})
+# Define proto target. Compile this target exclusively by calling:
+# `cmake --build <build_dir> --target proto`
+add_custom_target(proto ALL DEPENDS ${PROJECT_BINARY_DIR}/gen/content_analysis/sdk/analysis.pb.cc)
 
 # The include directory contains the header files needed by the demo code.
 # The gen directory contains generated protobuf headers describing the request
@@ -99,7 +89,7 @@ add_library(cac_agent
   ../agent/src/session_base.cc
   ../agent/src/session_base.h
   ${PLATFORM_AGENT_CODE}
-  ${PROTO_COMPILED_SRCS}
+  ${PROJECT_BINARY_DIR}/gen/content_analysis/sdk/analysis.pb.cc
 )
 target_link_libraries(cac_agent PUBLIC protobuf::libprotoc protobuf::libprotobuf protobuf::libprotobuf-lite)
 target_include_directories(cac_agent PRIVATE ${AGENT_INCLUDES})
@@ -110,7 +100,7 @@ add_library(cac_browser
   ../browser/src/client_base.cc
   ../browser/src/client_base.h
   ${PLATFORM_BROWSER_CODE}
-  ${PROTO_COMPILED_SRCS}
+  ${PROJECT_BINARY_DIR}/gen/content_analysis/sdk/analysis.pb.cc
 )
 target_include_directories(cac_browser PRIVATE ${BROWSER_INCLUDES})
 target_link_libraries(cac_browser PUBLIC protobuf::libprotoc protobuf::libprotobuf protobuf::libprotobuf-lite)
