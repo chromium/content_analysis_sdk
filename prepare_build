@@ -9,7 +9,7 @@
 # directory tree. By default, if no directory is supplied, a directory
 # named `build` in the project root will be used.
 #
-# Once the build is prepared, the demo binary is build using the command
+# Once the build is prepared, the demo binary is built using the command
 # `cmake --build <build-dir>`, where <build-dir> is the same argument given
 # to this script.
 
