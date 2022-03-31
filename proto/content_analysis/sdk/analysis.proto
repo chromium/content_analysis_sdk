@@ -8,6 +8,26 @@ option optimize_for = LITE_RUNTIME;
 
 package content_analysis.sdk;
 
+// Handshake enum is sent with every message indicating the
+// status of the issuing browser or the agent.
+message Handshake {
+  enum Status {
+    FAILURE = 0;
+    SUCCESS = 1;
+  }
+  optional Status status = 1; 
+}
+
+// An Acknowledgment is sent from the browser to the agent
+// indicating whether the request was succeeded or failed.
+message Acknowledgement {
+  enum Status {
+    FAILURE = 0;
+    SUCCESS = 1;
+  }
+  optional Status status = 1;
+}
+
 // The values in this enum can be extended in future versions of Chrome to
 // support new analysis triggers.
 enum AnalysisConnector {
