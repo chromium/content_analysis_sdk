@@ -32,30 +32,11 @@ echo Demo dir:   %DEMO_DIR%
 echo Proto dir:  %PROTO_DIR%
 echo .
 
-<<<<<<< HEAD:prepare_build.bat
-REM Prepare build directory
-mkdir "%BUILD_DIR%"
-<<<<<<< HEAD:prepare_build.bat
-REM Prepare protobuf out directory
-mkdir "%BUILD_DIR%\gen"
-REM Enter build directory
-=======
-mkdir "%BUILD_DIR%\gen"
->>>>>>> a445de0 (add protos build target to CMakeLists):demo/prepare_build.bat
-=======
-IF exist "%BUILD_DIR%" (
-  echo.
-  echo   ### Directory %1 must not exist.
-  echo.
-  EXIT /b
-)
-
 REM Prepare build directory
 mkdir "%BUILD_DIR%"
 REM Prepare protobuf out directory
 mkdir "%BUILD_DIR%\gen"
 REM Enter build directory
->>>>>>> 570d9c1 (update READMEs and add some comments):demo/prepare_build.bat
 cd /d "%BUILD_DIR%"
 
 REM Install vcpkg and use it to install Google Protocol Buffers.

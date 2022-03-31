@@ -26,29 +26,11 @@ echo Build dir:  $BUILD_DIR
 echo Demo dir:   $DEMO_DIR
 echo Proto dir:  $PROTO_DIR
 
-<<<<<<< HEAD:prepare_build
-# Prepare build directory
-mkdir -p $BUILD_DIR
-<<<<<<< HEAD:prepare_build
-# Prepare protobuf out directory
-mkdir -p $BUILD_DIR/gen
-# Enter build directory
-=======
-mkdir -p $BUILD_DIR/gen
->>>>>>> a445de0 (add protos build target to CMakeLists):demo/prepare_build
-=======
-test -d $BUILD_DIR && (
-  echo ""
-  echo "  *** $BUILD_DIR must not exist"
-  return 1 2>/dev/null || exit 1
-)
-
 # Prepare build directory
 mkdir -p $BUILD_DIR
 # Prepare protobuf out directory
 mkdir -p $BUILD_DIR/gen
 # Enter build directory
->>>>>>> 570d9c1 (update READMEs and add some comments):demo/prepare_build
 cd $BUILD_DIR
 
 # Install vcpkg and use it to install Google Protocol Buffers.
