@@ -12,9 +12,8 @@ package content_analysis.sdk;
 // status of the issuing browser or the agent.
 message Handshake {
   enum Status {
-    STATUS_UNKNOWN = 0;
+    FAILURE = 0;
     SUCCESS = 1;
-    FAILURE = 2;
   }
   optional Status status = 1; 
 }
@@ -23,9 +22,8 @@ message Handshake {
 // indicating whether the request was succeeded or failed.
 message Acknowledgement {
   enum Status {
-    STATUS_UNKNOWN = 0;
+    FAILURE = 0;
     SUCCESS = 1;
-    FAILURE = 2;
   }
   optional Status status = 1;
 }
