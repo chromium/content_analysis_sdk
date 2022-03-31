@@ -18,11 +18,8 @@ set -euo pipefail
 export ROOT_DIR=$(realpath $(dirname $0))
 export DEMO_DIR=$(realpath $ROOT_DIR/demo)
 export PROTO_DIR=$(realpath  $ROOT_DIR/proto)
-if [ -z "$1" ]; then
-  export BUILD_DIR=$(realpath $ROOT_DIR/build)
-else
-  export BUILD_DIR=$(realpath $1)
-fi
+# Defaults to $ROOT_DIR/build if no argument is provided.
+export BUILD_DIR=$(realpath ${1:-$ROOT_DIR/build})
 
 echo Root dir:   $ROOT_DIR
 echo Build dir:  $BUILD_DIR
