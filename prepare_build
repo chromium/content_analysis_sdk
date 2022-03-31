@@ -5,8 +5,9 @@
 
 # This script is meant to be run once to setup the example demo agent.
 # Run it with one command line argument: the path to a directory where the
-# demo agent will be built.  This should be a directory outside the SDK
-# directory tree.  This directory must not already exist.
+# demo agent will be built. This should be a directory outside the SDK
+# directory tree. By default, if no directory is supplied, a directory
+# named `build` in the project root will be used.
 #
 # Once the build is prepared, the demo binary is build using the command
 # `cmake --build <build-dir>`, where <build-dir> is the same argument given
@@ -14,21 +15,19 @@
 
 set -euo pipefail
 
-export BUILD_DIR=$(realpath $1)
-export ROOT_DIR=$(realpath $(dirname $0)/..)
+export ROOT_DIR=$(realpath $(dirname $0))
 export DEMO_DIR=$(realpath $ROOT_DIR/demo)
 export PROTO_DIR=$(realpath  $ROOT_DIR/proto)
+if [ -z "$1" ]; then
+  export BUILD_DIR=$(realpath $ROOT_DIR/build)
+else
+  export BUILD_DIR=$(realpath $1)
+fi
 
 echo Root dir:   $ROOT_DIR
 echo Build dir:  $BUILD_DIR
 echo Demo dir:   $DEMO_DIR
 echo Proto dir:  $PROTO_DIR
-
-test -d $BUILD_DIR && (
-  echo ""
-  echo "  *** $BUILD_DIR must not exist"
-  return 1 2>/dev/null || exit 1
-)
 
 # Prepare build directory
 mkdir -p $BUILD_DIR
@@ -41,10 +40,11 @@ cd $BUILD_DIR
 test -d vcpkg || (
   git clone https://github.com/microsoft/vcpkg
   ./vcpkg/bootstrap-vcpkg.sh -disableMetrics
-  ./vcpkg/vcpkg install protobuf
 )
+# Install any packages we want from vcpkg.
+./vcpkg/vcpkg install protobuf
 
 # Generate the build files.
 export CMAKE_TOOLCHAIN_FILE=./vcpkg/scripts/buildsystems/vcpkg.cmake
-cmake $DEMO_DIR
+cmake $ROOT_DIR
 
