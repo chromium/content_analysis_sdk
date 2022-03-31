@@ -36,8 +36,8 @@ class RequestQueue {
   void push(std::unique_ptr<Session> session) {
     Enter();
     sessions_.push(std::move(session));
-    Leave();
     WakeOne();
+    Leave();
   }
 
   // Pop the next request from the queue, blocking if necessary until a session
@@ -63,8 +63,8 @@ class RequestQueue {
   void abort() {
     Enter();
     abort_ = true;
-    Leave();
     WakeAll();
+    Leave();
   }
 
  private:
