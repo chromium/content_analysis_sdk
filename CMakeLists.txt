@@ -50,12 +50,18 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     ./agent/src/session_win.cc
     ./agent/src/session_win.h
   )
+  set(PLATFORM_QUEUED_AGENT_DEMO_CODE
+    ./demo/queued_agent_win.cc
+  )
 else()
   set(PLATFORM_AGENT_CODE
     ./agent/src/agent_posix.cc
     ./agent/src/agent_posix.h
     ./agent/src/session_posix.cc
     ./agent/src/session_posix.h
+  )
+  set(PLATFORM_QUEUED_AGENT_DEMO_CODE
+    ./demo/queued_agent_posix.cc
   )
 endif()
 
@@ -110,7 +116,7 @@ target_include_directories(agent PRIVATE ${AGENT_INCLUDES})
 target_link_libraries(agent PRIVATE cac_agent)
 
 # A demo agent that queues up requests for a background thread.
-add_executable(queued_agent ./demo/queued_agent.cc)
+add_executable(queued_agent ${PLATFORM_QUEUED_AGENT_DEMO_CODE})
 target_include_directories(queued_agent PRIVATE ${AGENT_INCLUDES})
 target_link_libraries(queued_agent PRIVATE cac_agent)
 

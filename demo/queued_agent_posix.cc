@@ -2,11 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#if defined(WIN32)
-#include <windows.h>
-#else
 #include <pthread.h>
-#endif
 
 #include <fstream>
 #include <iostream>
@@ -68,32 +64,6 @@ class RequestQueue {
   }
 
  private:
-#if defined(WIN32)
-  void Init() {
-    InitializeConditionVariable(&cv_);
-    InitializeCriticalSection(&cs_);
-  }
-  void Term() {
-  }
-  void Enter() {
-    EnterCriticalSection(&cs_);
-  }
-  void Leave() {
-    LeaveCriticalSection(&cs_);
-  }
-  void Wait() {
-    SleepConditionVariableCS(&cv_, &cs_, INFINITE);
-  }
-  void WakeOne() {
-    WakeConditionVariable(&cv_);
-  }
-  void WakeAll() {
-    WakeAllConditionVariable(&cv_);
-  }
-
-  CRITICAL_SECTION cs_;
-  CONDITION_VARIABLE cv_;
-#else
   void Init() {
     pthread_condattr_t cattr;
     pthread_condattr_init(&cattr);
@@ -125,7 +95,6 @@ class RequestQueue {
 
   pthread_mutex_t cs_;
   pthread_cond_t cv_;
-#endif
 
   std::queue<std::unique_ptr<Session>> sessions_;
   bool abort_ = false;
@@ -254,11 +223,7 @@ void AnalyzeContent(std::unique_ptr<Session> session) {
   }
 }
 
-#if defined(WIN32)
-unsigned _stdcall ProcessRequests(void* queue) {
-#else
 void* ProcessRequests(void* queue) {
-#endif
   RequestQueue* request_queue = reinterpret_cast<RequestQueue*>(queue);
 
   while (true) {
@@ -278,17 +243,11 @@ int main(int argc, char* argv[]) {
 
   // Start a background thread to process the queue.  This demo starts one
   // thread but any number would work.
-#if defined(WIN32)
-  unsigned tid;
-  HANDLE thread = reinterpret_cast<HANDLE>(_beginthreadex(
-      nullptr, 0, ProcessRequests, &request_queue, 0, &tid));
-#else
   pthread_attr_t attr;
   pthread_t tid;
   pthread_attr_init(&attr);
   pthread_create(&tid, &attr, ProcessRequests, &request_queue);
   pthread_attr_destroy(&attr);
-#endif
 
   // Each agent uses a unique URI to identify itself with Google Chrome.
   auto agent = Agent::Create("content_analysis_sdk");
@@ -313,12 +272,8 @@ int main(int argc, char* argv[]) {
 
   // Abort background process and wait for it to finish.
   request_queue.abort();
-#if defined(WIN32)
-  WaitForSingleObject(thread, INFINITE);
-#else
   void* res;
   pthread_join(tid, &res);
-#endif
 
   return 0;
 };
