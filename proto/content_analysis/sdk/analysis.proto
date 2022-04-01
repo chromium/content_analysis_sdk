@@ -61,23 +61,27 @@ message ContentData {
 
 // Analysis request sent from Google Chrome to agent.
 message ContentAnalysisRequest {
+  // Token used to correlate requests and responses.
+  optional string request_token = 5;
+
   // Which analysis trigger fired this request.
   optional AnalysisConnector analysis_connector = 9;
 
   // Information about the data that triggered the content analysis request.
   optional ContentMetaData request_data = 10;
 
-  // The actual data to be analyzed.
-  optional ContentData content_data = 100;
-
-  // Token used to correlate requests and responses.
-  optional string request_token = 5;
-
   // The tags configured for the URL that triggered the content analysis.
   repeated string tags = 11;
 
+  // The actual data to be analyzed.
+  optional ContentData content_data = 100;
+
+  // The absolute deadline Chrome will wait until a respone from the agent is received.
+  optional int64 expires_at = 101;
+
   reserved 1 to 4, 6 to 8, 12;
 }
+
 
 // Verdict response sent from agent to Google Chrome.
 message ContentAnalysisResponse {
