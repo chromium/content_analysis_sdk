@@ -32,6 +32,8 @@ class SessionWin : public SessionBase {
   HANDLE hPipe_ = INVALID_HANDLE_VALUE;
 };
 
+std::vector<char> ReadNextMessageFromPipe(HANDLE pipe);
+
 }  // namespace sdk
 }  // namespace content_analysis
 

@@ -16,29 +16,10 @@ SessionWin::~SessionWin() {
 }
 
 DWORD SessionWin::Init() {
-  DWORD err = ERROR_SUCCESS;
-  std::vector<char> buffer(kBufferSize);
-  char* p = buffer.data();
-  int final_size = 0;
-  while (true) {
-    DWORD read;
-    if (ReadFile(hPipe_, p, kBufferSize, &read, nullptr)) {
-      final_size += read;
-      break;
-    } else {
-      err = GetLastError();
-      if (err != ERROR_MORE_DATA)
-        break;
-
-      buffer.resize(buffer.size() + kBufferSize);
-      p = buffer.data() + buffer.size() - kBufferSize;
-    }
-  }
-
-  if (!request()->ParseFromArray(buffer.data(), final_size)) {
+  std::vector<char> buffer = ReadNextMessageFromPipe(hPipe_);
+  if (!request()->ParseFromArray(buffer.data(), buffer.size())) {
     return -1;
   }
-
   // TODO(rogerta): do some basic validation of the request.
 
   // Prepare the response so that ALLOW verdicts are the default().
@@ -72,6 +53,31 @@ void SessionWin::Shutdown() {
     CloseHandle(hPipe_);
     hPipe_ = INVALID_HANDLE_VALUE;
   }
+}
+
+// Reads the next message from the pipe and returns a buffer of chars.
+// Can read any length of message.
+std::vector<char> ReadNextMessageFromPipe(HANDLE pipe) {
+  DWORD err = ERROR_SUCCESS;
+  std::vector<char> buffer(kBufferSize);
+  char* p = buffer.data();
+  int final_size = 0;
+  while (true) {
+    DWORD read;
+    if (ReadFile(pipe, p, kBufferSize, &read, nullptr)) {
+      final_size += read;
+      break;
+    } else {
+      err = GetLastError();
+      if (err != ERROR_MORE_DATA)
+        break;
+
+      buffer.resize(buffer.size() + kBufferSize);
+      p = buffer.data() + buffer.size() - kBufferSize;
+    }
+  }
+  buffer.resize(final_size);
+  return buffer;
 }
 
 }  // namespace sdk
