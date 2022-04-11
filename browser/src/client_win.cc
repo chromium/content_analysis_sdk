@@ -11,6 +11,8 @@
 namespace content_analysis {
 namespace sdk {
 
+const DWORD kBufferSize = 4096;
+
 // static
 std::unique_ptr<Client> Client::Create(const Uri& uri) {
   return std::make_unique<ClientWin>(uri);
@@ -59,26 +61,45 @@ int ClientWin::Send(const ContentAnalysisRequest& request,
   }
 
   HANDLE handle;
-  DWORD err = ConnectToPipe(&handle);
-  if (err != ERROR_SUCCESS) {
+  if (ConnectToPipe(&handle) != ERROR_SUCCESS) {
     return -1;
   }
 
   DWORD written;
+  bool success = false;
   if (WriteFile(handle, request_str.data(), request_str.size(), &written,
                 nullptr)) {
-    // NOTE: assumption is that response is never larger than this.
-    std::vector<char> buffer(4096);
-    DWORD read;
-    if (ReadFile(handle, buffer.data(), buffer.size(), &read, nullptr)) {
-      response->ParseFromString(buffer.data());
-    } else {
-      err = GetLastError();
-    }
+    std::vector<char> buffer = ReadNextMessageFromPipe(handle);
+    success = response->ParseFromArray(buffer.data(), buffer.size());
   }
 
   CloseHandle(handle);
-  return err == ERROR_SUCCESS ? 0 : -1;
+  return success ? 0 : -1;
+}
+
+// Reads the next message from the pipe and returns a buffer of chars.
+// Can read any length of message.
+std::vector<char> ReadNextMessageFromPipe(HANDLE pipe) {
+  DWORD err = ERROR_SUCCESS;
+  std::vector<char> buffer(kBufferSize);
+  char* p = buffer.data();
+  int final_size = 0;
+  while (true) {
+    DWORD read;
+    if (ReadFile(pipe, p, kBufferSize, &read, nullptr)) {
+      final_size += read;
+      break;
+    } else {
+      err = GetLastError();
+      if (err != ERROR_MORE_DATA)
+        break;
+
+      buffer.resize(buffer.size() + kBufferSize);
+      p = buffer.data() + buffer.size() - kBufferSize;
+    }
+  }
+  buffer.resize(final_size);
+  return buffer;
 }
 
 }  // namespace sdk
