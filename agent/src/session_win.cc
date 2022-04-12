@@ -38,11 +38,8 @@ int SessionWin::Send() {
   if (!response()->SerializeToString(&response_str))
     return -1;
 
-  DWORD written;
-  if (!WriteFile(hPipe_, response_str.data(), response_str.size(), &written,
-                nullptr)) {
+  if (!WriteMessageToPipe(hPipe_, response_str))
     return -1;
-  }
 
   return 0;
 }
@@ -78,6 +75,13 @@ std::vector<char> ReadNextMessageFromPipe(HANDLE pipe) {
   }
   buffer.resize(final_size);
   return buffer;
+}
+
+// Writes a string to the pipe. Returns True if successful, else returns False.
+bool WriteMessageToPipe(HANDLE pipe, const std::string& message) {
+  DWORD written;
+  return WriteFile(pipe, message.data(), message.size(), &written,
+                nullptr);
 }
 
 }  // namespace sdk
