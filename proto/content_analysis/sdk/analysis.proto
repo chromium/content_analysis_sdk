@@ -8,24 +8,25 @@ option optimize_for = LITE_RUNTIME;
 
 package content_analysis.sdk;
 
-// Handshake enum is sent with every message indicating the
-// status of the issuing browser or the agent.
+// A Handshake is sent when opening a new connection from browser to agent.
 message Handshake {
-  enum Status {
-    FAILURE = 0;
-    SUCCESS = 1;
-  }
-  optional Status status = 1; 
+  // Process ID of the browser initiating the session.
+  optional int32 process_id = 1;
+  // Indicates whether a content analysis is being requested in this session.
+  // If set to True, then a request will be sent by the browser after the
+  // handshake and the browser is expecting to then receive a verdict response
+  // from the agent following the request.  If set to False, the browser is 
+  // performing a startup check or an intermittent heartbeat, and no response 
+  // is expected from the agent.
+  optional bool content_analysis_requested = 2;
 }
 
-// An Acknowledgment is sent from the browser to the agent
-// indicating whether the request was succeeded or failed.
+// An Acknowledgment is sent by the browser following the receipt of a response
+// from the agent.
 message Acknowledgement {
-  enum Status {
-    FAILURE = 0;
-    SUCCESS = 1;
-  }
-  optional Status status = 1;
+  // Indicates whether a verdict was successfully received by the browser.
+  // This should be logged by agents, especially if it's False.
+  optional bool verdict_received = 1;
 }
 
 // The values in this enum can be extended in future versions of Chrome to
