@@ -33,6 +33,7 @@ class SessionWin : public SessionBase {
 };
 
 std::vector<char> ReadNextMessageFromPipe(HANDLE pipe);
+bool WriteMessageToPipe(HANDLE pipe, const std::string& message);
 
 }  // namespace sdk
 }  // namespace content_analysis

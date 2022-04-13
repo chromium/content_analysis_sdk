@@ -65,10 +65,9 @@ int ClientWin::Send(const ContentAnalysisRequest& request,
     return -1;
   }
 
-  DWORD written;
   bool success = false;
-  if (WriteFile(handle, request_str.data(), request_str.size(), &written,
-                nullptr)) {
+
+  if (WriteMessageToPipe(handle, request_str)) {
     std::vector<char> buffer = ReadNextMessageFromPipe(handle);
     success = response->ParseFromArray(buffer.data(), buffer.size());
   }
@@ -100,6 +99,13 @@ std::vector<char> ReadNextMessageFromPipe(HANDLE pipe) {
   }
   buffer.resize(final_size);
   return buffer;
+}
+
+// Writes a string to the pipe. Returns True if successful, else returns False.
+bool WriteMessageToPipe(HANDLE pipe, const std::string& message) {
+  DWORD written;
+  return WriteFile(pipe, message.data(), message.size(), &written,
+                nullptr);
 }
 
 }  // namespace sdk
