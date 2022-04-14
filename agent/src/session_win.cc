@@ -49,6 +49,11 @@ int SessionWin::Send() {
   if (!WriteMessageToPipe(hPipe_, response_str))
     return -1;
 
+  std::vector<char> buffer = ReadNextMessageFromPipe(hPipe_);
+  if (!acknowledgement()->ParseFromArray(buffer.data(), buffer.size())) {
+    return -1;
+  }
+
   return 0;
 }
 
