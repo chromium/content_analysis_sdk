@@ -16,6 +16,14 @@ SessionWin::~SessionWin() {
 }
 
 DWORD SessionWin::Init() {
+  Handshake handshake;
+  std::vector<char> hs_buffer = ReadNextMessageFromPipe(hPipe_);
+  if (!handshake.ParseFromArray(hs_buffer.data(), hs_buffer.size())) {
+    return -1;
+  }
+  if (!handshake.content_analysis_requested()) {
+    return ERROR_SUCCESS;
+  }
   std::vector<char> buffer = ReadNextMessageFromPipe(hPipe_);
   if (!request()->ParseFromArray(buffer.data(), buffer.size())) {
     return -1;
@@ -79,9 +87,12 @@ std::vector<char> ReadNextMessageFromPipe(HANDLE pipe) {
 
 // Writes a string to the pipe. Returns True if successful, else returns False.
 bool WriteMessageToPipe(HANDLE pipe, const std::string& message) {
-  DWORD written;
-  return WriteFile(pipe, message.data(), message.size(), &written,
-                nullptr);
+  if (message.length() > 0) {
+    DWORD written;
+    return WriteFile(pipe, message.data(), message.size(), &written,
+                  nullptr);
+  }
+  return false;
 }
 
 }  // namespace sdk
