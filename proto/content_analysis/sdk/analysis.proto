@@ -55,10 +55,19 @@ message ContentMetaData {
 
 // Analysis request sent from Google Chrome to agent.
 message ContentAnalysisRequest {
-  // Token used to correlate requests and responses.
+  // The TokenID for Enterprise-enrolled devices.  This identifies a specific
+  // chrome instance.
+  optional string device_token = 1;
+
+  // Firebase Cloud Messaging token used to notify this client of the verdict.
+  // This identifies a specific chrome instance.
+  optional string fcm_notification_token = 2;
+
+  // Token used to correlate requests and responses. This is different than the
+  // FCM token in that it is unique for each request.
   optional string request_token = 5;
 
-  // Which analysis trigger fired this request.
+  // Which enterprise connector fired this request.
   optional AnalysisConnector analysis_connector = 9;
 
   // Information about the data that triggered the content analysis request.
@@ -82,7 +91,8 @@ message ContentAnalysisRequest {
   // The absolute deadline Chrome will wait until a response from the agent is received.
   optional int64 expires_at = 101;
 
-  reserved 1 to 4, 6 to 8, 12;
+  // Reserved to make sure there is no overlap with DeepScanningClientRequest.
+  reserved 3, 4, 6 to 8;
 }
 
 
