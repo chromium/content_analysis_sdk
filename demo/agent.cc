@@ -97,6 +97,8 @@ void AnalyzeContent(std::unique_ptr<Session> session) {
   // The verdict, which can be "allow" or "block" is written into
   // session->GetResponse().
 
+  std::cout << std::endl << "----------" << std::endl << std::endl;
+
   DumpRequest(session->GetRequest());
 
   bool block = false;
@@ -131,7 +133,14 @@ void AnalyzeContent(std::unique_ptr<Session> session) {
   std::cout << std::endl;
 
   // Send the response back to Google Chrome.
-  if (session->Send() != 0) {
+  if (session->Send() == 0) {
+    std::cout << "Acknowledgement:" << std::endl;
+    if (session->GetAcknowledgement().verdict_received()) {
+      std::cout << "  Verdict Received: true" << std::endl;
+    } else {
+      std::cout << "  Verdict Received: false" << std::endl;
+    }
+  } else {
     std::cout << "[Demo] Error sending response" << std::endl;
   }
 }
