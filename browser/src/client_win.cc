@@ -67,9 +67,13 @@ int ClientWin::Send(const ContentAnalysisRequest& request,
 
   bool success = false;
 
-  if (WriteMessageToPipe(handle, request_str)) {
-    std::vector<char> buffer = ReadNextMessageFromPipe(handle);
-    success = response->ParseFromArray(buffer.data(), buffer.size());
+  Handshake handshake;
+  handshake.set_content_analysis_requested(true);
+  if (WriteMessageToPipe(handle, handshake.SerializeAsString())) {
+    if (WriteMessageToPipe(handle, request_str)) {
+      std::vector<char> buffer = ReadNextMessageFromPipe(handle);
+      success = response->ParseFromArray(buffer.data(), buffer.size());
+    }
   }
 
   CloseHandle(handle);
@@ -103,9 +107,12 @@ std::vector<char> ReadNextMessageFromPipe(HANDLE pipe) {
 
 // Writes a string to the pipe. Returns True if successful, else returns False.
 bool WriteMessageToPipe(HANDLE pipe, const std::string& message) {
-  DWORD written;
-  return WriteFile(pipe, message.data(), message.size(), &written,
-                nullptr);
+  if (message.length() > 0) {
+    DWORD written;
+    return WriteFile(pipe, message.data(), message.size(), &written,
+                  nullptr);
+  }
+  return false;
 }
 
 }  // namespace sdk
