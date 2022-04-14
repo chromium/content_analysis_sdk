@@ -61,21 +61,26 @@ int ClientWin::Send(const ContentAnalysisRequest& request,
   }
 
   Handshake handshake;
-  handshake.set_content_analysis_requested(true);
+  handshake.set_content_analysis_requested(request.has_content_data());
   
   bool success = false;
 
   if (WriteMessageToPipe(handle, handshake.SerializeAsString())) {
-    if (WriteMessageToPipe(handle, request.SerializeAsString())) {
-      Acknowledgement acknowledgement;
-      std::vector<char> buffer = ReadNextMessageFromPipe(handle);
-      if (response->ParseFromArray(buffer.data(), buffer.size())) {
-        acknowledgement.set_verdict_received(response->results_size() > 0);
-        success = true;
+    // If the message has no content data, only a handshake is sent
+    if (request.has_content_data()) {
+      if (WriteMessageToPipe(handle, request.SerializeAsString())) {
+        Acknowledgement acknowledgement;
+        std::vector<char> buffer = ReadNextMessageFromPipe(handle);
+        if (response->ParseFromArray(buffer.data(), buffer.size())) {
+          acknowledgement.set_verdict_received(!response->results().empty());
+          success = true;
+        }
+        if (!WriteMessageToPipe(handle, acknowledgement.SerializeAsString())) {
+          success = false;
+        }
       }
-      if (!WriteMessageToPipe(handle, acknowledgement.SerializeAsString())) {
-        success = false;
-      }
+    } else {
+      success = true;
     }
   }
 
