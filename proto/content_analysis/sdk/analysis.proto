@@ -21,7 +21,7 @@ message Handshake {
   optional bool content_analysis_requested = 2;
 }
 
-// An Acknowledgment is sent by the browser following the receipt of a response
+// An Acknowledgement is sent by the browser following the receipt of a response
 // from the agent.
 message Acknowledgement {
   // Indicates whether a verdict was successfully received by the browser.
