@@ -77,6 +77,9 @@ endif()
 # Makes available the package definitions in vcpkg.
 include("${PROJECT_BINARY_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake")
 find_package(Protobuf CONFIG REQUIRED)
+# Unit tests
+enable_testing()
+include(GoogleTest)
 
 # Builds the content analysis connector agent linker library.  This library is linked
 # into the agent in order to listen for and process content analysis requests
@@ -113,20 +116,3 @@ target_link_libraries(agent PRIVATE cac_agent)
 add_executable(browser ./demo/client.cc)
 target_include_directories(browser PRIVATE ${BROWSER_INCLUDES})
 target_link_libraries(browser PRIVATE cac_browser)
-
-# Unit tests
-enable_testing()
-find_package(GTest CONFIG REQUIRED)
-include(GoogleTest)
-
-add_executable(
-  agent_win_test
-  ../agent/src/agent_win_test.cc
-)
-target_link_libraries(
-  agent_win_test
-  PUBLIC 
-  GTest::gtest GTest::gtest_main
-)
-
-gtest_discover_tests(agent_win_test)
