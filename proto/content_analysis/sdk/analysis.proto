@@ -77,8 +77,19 @@ message ContentAnalysisRequest {
   // The actual data to be analyzed.
   optional ContentData content_data = 100;
 
-  // The absolute deadline Chrome will wait until a respone from the agent is received.
+  // The absolute deadline Chrome will wait until a response from the agent is received.
   optional int64 expires_at = 101;
+
+  // The data to analyze in the request. These fields are mutually exclusive,
+  // only one will be set in any content analysis request.
+  message ContentData {
+    // The text content to analyze.
+    optional string text_content = 1;
+    // The full path to the file to analyze. The path is expressed in a platform dependent way. 
+    optional string file_path = 2;
+  }
+
+  optional ContentData content_data = 102;
 
   reserved 1 to 4, 6 to 8, 12;
 }
