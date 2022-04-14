@@ -71,8 +71,15 @@ int ClientWin::Send(const ContentAnalysisRequest& request,
   handshake.set_content_analysis_requested(true);
   if (WriteMessageToPipe(handle, handshake.SerializeAsString())) {
     if (WriteMessageToPipe(handle, request_str)) {
+      Acknowledgement acknowledgement;
       std::vector<char> buffer = ReadNextMessageFromPipe(handle);
-      success = response->ParseFromArray(buffer.data(), buffer.size());
+      if (response->ParseFromArray(buffer.data(), buffer.size())) {
+        acknowledgement.set_verdict_received(response->results_size() > 0);
+        success = true;
+      }
+      if (!WriteMessageToPipe(handle, acknowledgement.SerializeAsString())) {
+        success = false;
+      }
     }
   }
 
