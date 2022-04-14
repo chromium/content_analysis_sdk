@@ -42,11 +42,7 @@ int SessionWin::Close() {
 }
 
 int SessionWin::Send() {
-  std::string response_str;
-  if (!response()->SerializeToString(&response_str))
-    return -1;
-
-  if (!WriteMessageToPipe(hPipe_, response_str))
+  if (!WriteMessageToPipe(hPipe_, response()->SerializeAsString()))
     return -1;
 
   std::vector<char> buffer = ReadNextMessageFromPipe(hPipe_);

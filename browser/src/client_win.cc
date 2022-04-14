@@ -55,22 +55,18 @@ DWORD ClientWin::ConnectToPipe(HANDLE* handle) {
 
 int ClientWin::Send(const ContentAnalysisRequest& request,
                     ContentAnalysisResponse* response) {
-  std::string request_str;
-  if (!request.SerializeToString(&request_str)) {
-    return -1;
-  }
-
   HANDLE handle;
   if (ConnectToPipe(&handle) != ERROR_SUCCESS) {
     return -1;
   }
 
-  bool success = false;
-
   Handshake handshake;
   handshake.set_content_analysis_requested(true);
+  
+  bool success = false;
+
   if (WriteMessageToPipe(handle, handshake.SerializeAsString())) {
-    if (WriteMessageToPipe(handle, request_str)) {
+    if (WriteMessageToPipe(handle, request.SerializeAsString())) {
       Acknowledgement acknowledgement;
       std::vector<char> buffer = ReadNextMessageFromPipe(handle);
       if (response->ParseFromArray(buffer.data(), buffer.size())) {
