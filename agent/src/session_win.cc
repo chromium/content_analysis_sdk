@@ -88,13 +88,12 @@ std::vector<char> ReadNextMessageFromPipe(HANDLE pipe) {
 
 // Writes a string to the pipe. Returns True if successful, else returns False.
 bool WriteMessageToPipe(HANDLE pipe, const std::string& message) {
-  if (message.length() > 0) {
-    DWORD written;
-    return WriteFile(pipe, message.data(), message.size(), &written,
-                  nullptr);
-  }
-  return false;
+  if (message.empty())
+    return false;
+  DWORD written;
+  return WriteFile(pipe, message.data(), message.size(), &written, nullptr);
 }
+
 
 }  // namespace sdk
 }  // namespace content_analysis
