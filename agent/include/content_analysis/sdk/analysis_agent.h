@@ -69,6 +69,10 @@ class Session {
   // The agent may modify this response in place before calling Send.
   virtual ContentAnalysisResponse& GetResponse() = 0;
 
+  // Retrieves a reference to the Acknowledgement sent by Google Chrome after
+  // the agent responds with a verdict.
+  virtual const Acknowledgement& GetAcknowledgement() const = 0;
+
   // Send the verdict to Google Chrome.  Once this method is called further
   // changes to the response are ignored.
   virtual int Send() = 0;

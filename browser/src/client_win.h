@@ -27,6 +27,9 @@ class ClientWin : public ClientBase {
   std::string pipename_;
 };
 
+std::vector<char> ReadNextMessageFromPipe(HANDLE pipe);
+bool WriteMessageToPipe(HANDLE pipe, const std::string& message);
+
 }  // namespace sdk
 }  // namespace content_analysis
 

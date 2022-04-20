@@ -105,11 +105,11 @@ int main(int argc, char* argv[]) {
   request.set_request_token(request_token);
   *request.add_tags() = tag;
 
-  auto requst_data = request.mutable_request_data();
-  requst_data->set_url(url);
-  requst_data->set_digest(digest);
+  auto request_data = request.mutable_request_data();
+  request_data->set_url(url);
+  request_data->set_digest(digest);
   if (!filename.empty()) {
-    requst_data->set_filename(filename);
+    request_data->set_filename(filename);
   }
 
   auto content_data = request.mutable_content_data();

@@ -17,16 +17,19 @@ class SessionBase : public Session {
   int Close() override;
   const ContentAnalysisRequest& GetRequest() const override { return request_; }
   ContentAnalysisResponse& GetResponse() override { return response_; }
+  const Acknowledgement& GetAcknowledgement() const override { return acknowledgement_; }
 
  protected:
   SessionBase() = default;
 
   ContentAnalysisRequest* request() { return &request_; }
   ContentAnalysisResponse* response() { return &response_; }
+  Acknowledgement* acknowledgement() { return &acknowledgement_; }
 
 private:
   ContentAnalysisRequest request_;
   ContentAnalysisResponse response_;
+  Acknowledgement acknowledgement_;
 };
 
 }  // namespace sdk

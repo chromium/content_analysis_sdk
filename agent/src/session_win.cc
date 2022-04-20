@@ -16,29 +16,18 @@ SessionWin::~SessionWin() {
 }
 
 DWORD SessionWin::Init() {
-  DWORD err = ERROR_SUCCESS;
-  std::vector<char> buffer(kBufferSize);
-  char* p = buffer.data();
-  int final_size = 0;
-  while (true) {
-    DWORD read;
-    if (ReadFile(hPipe_, p, kBufferSize, &read, nullptr)) {
-      final_size += read;
-      break;
-    } else {
-      err = GetLastError();
-      if (err != ERROR_MORE_DATA)
-        break;
-
-      buffer.resize(buffer.size() + kBufferSize);
-      p = buffer.data() + buffer.size() - kBufferSize;
-    }
-  }
-
-  if (!request()->ParseFromArray(buffer.data(), final_size)) {
+  Handshake handshake;
+  std::vector<char> hs_buffer = ReadNextMessageFromPipe(hPipe_);
+  if (!handshake.ParseFromArray(hs_buffer.data(), hs_buffer.size())) {
     return -1;
   }
-
+  if (!handshake.content_analysis_requested()) {
+    return ERROR_SUCCESS;
+  }
+  std::vector<char> buffer = ReadNextMessageFromPipe(hPipe_);
+  if (!request()->ParseFromArray(buffer.data(), buffer.size())) {
+    return -1;
+  }
   // TODO(rogerta): do some basic validation of the request.
 
   // Prepare the response so that ALLOW verdicts are the default().
@@ -53,13 +42,11 @@ int SessionWin::Close() {
 }
 
 int SessionWin::Send() {
-  std::string response_str;
-  if (!response()->SerializeToString(&response_str))
+  if (!WriteMessageToPipe(hPipe_, response()->SerializeAsString()))
     return -1;
 
-  DWORD written;
-  if (!WriteFile(hPipe_, response_str.data(), response_str.size(), &written,
-                nullptr)) {
+  std::vector<char> buffer = ReadNextMessageFromPipe(hPipe_);
+  if (!acknowledgement()->ParseFromArray(buffer.data(), buffer.size())) {
     return -1;
   }
 
@@ -73,6 +60,40 @@ void SessionWin::Shutdown() {
     hPipe_ = INVALID_HANDLE_VALUE;
   }
 }
+
+// Reads the next message from the pipe and returns a buffer of chars.
+// Can read any length of message.
+std::vector<char> ReadNextMessageFromPipe(HANDLE pipe) {
+  DWORD err = ERROR_SUCCESS;
+  std::vector<char> buffer(kBufferSize);
+  char* p = buffer.data();
+  int final_size = 0;
+  while (true) {
+    DWORD read;
+    if (ReadFile(pipe, p, kBufferSize, &read, nullptr)) {
+      final_size += read;
+      break;
+    } else {
+      err = GetLastError();
+      if (err != ERROR_MORE_DATA)
+        break;
+
+      buffer.resize(buffer.size() + kBufferSize);
+      p = buffer.data() + buffer.size() - kBufferSize;
+    }
+  }
+  buffer.resize(final_size);
+  return buffer;
+}
+
+// Writes a string to the pipe. Returns True if successful, else returns False.
+bool WriteMessageToPipe(HANDLE pipe, const std::string& message) {
+  if (message.empty())
+    return false;
+  DWORD written;
+  return WriteFile(pipe, message.data(), message.size(), &written, nullptr);
+}
+
 
 }  // namespace sdk
 }  // namespace content_analysis

@@ -8,24 +8,25 @@ option optimize_for = LITE_RUNTIME;
 
 package content_analysis.sdk;
 
-// Handshake enum is sent with every message indicating the
-// status of the issuing browser or the agent.
+// A Handshake is sent when opening a new connection from browser to agent.
 message Handshake {
-  enum Status {
-    FAILURE = 0;
-    SUCCESS = 1;
-  }
-  optional Status status = 1; 
+  // Process ID of the browser initiating the session.
+  optional int32 process_id = 1;
+  // Indicates whether a content analysis is being requested in this session.
+  // If set to True, then a request will be sent by the browser after the
+  // handshake and the browser is expecting to then receive a verdict response
+  // from the agent following the request.  If set to False, the browser is 
+  // performing a startup check or an intermittent heartbeat, and no response 
+  // is expected from the agent.
+  optional bool content_analysis_requested = 2;
 }
 
-// An Acknowledgment is sent from the browser to the agent
-// indicating whether the request was succeeded or failed.
+// An Acknowledgement is sent by the browser following the receipt of a response
+// from the agent.
 message Acknowledgement {
-  enum Status {
-    FAILURE = 0;
-    SUCCESS = 1;
-  }
-  optional Status status = 1;
+  // Indicates whether a verdict was successfully received by the browser.
+  // This should be logged by agents, especially if it's False.
+  optional bool verdict_received = 1;
 }
 
 // The values in this enum can be extended in future versions of Chrome to
@@ -61,23 +62,27 @@ message ContentData {
 
 // Analysis request sent from Google Chrome to agent.
 message ContentAnalysisRequest {
+  // Token used to correlate requests and responses.
+  optional string request_token = 5;
+
   // Which analysis trigger fired this request.
   optional AnalysisConnector analysis_connector = 9;
 
   // Information about the data that triggered the content analysis request.
   optional ContentMetaData request_data = 10;
 
-  // The actual data to be analyzed.
-  optional ContentData content_data = 100;
-
-  // Token used to correlate requests and responses.
-  optional string request_token = 5;
-
   // The tags configured for the URL that triggered the content analysis.
   repeated string tags = 11;
 
+  // The actual data to be analyzed.
+  optional ContentData content_data = 100;
+
+  // The absolute deadline Chrome will wait until a respone from the agent is received.
+  optional int64 expires_at = 101;
+
   reserved 1 to 4, 6 to 8, 12;
 }
+
 
 // Verdict response sent from agent to Google Chrome.
 message ContentAnalysisResponse {
