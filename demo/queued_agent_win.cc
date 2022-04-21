@@ -32,8 +32,11 @@ class RequestQueue {
   void push(std::unique_ptr<Session> session) {
     Enter();
     sessions_.push(std::move(session));
-    WakeOne();
+
+    // On Windows, it is usual to leave the critical section before
+    // waking the condition variable.
     Leave();
+    WakeOne();
   }
 
   // Pop the next request from the queue, blocking if necessary until a session
@@ -42,7 +45,7 @@ class RequestQueue {
   std::unique_ptr<Session> pop() {
     Enter();
 
-    while (!abort_ && sessions_.size() == 0)
+    while (!abort_ && sessions_.empty())
       Wait();
 
     std::unique_ptr<Session> session;
@@ -59,8 +62,11 @@ class RequestQueue {
   void abort() {
     Enter();
     abort_ = true;
-    WakeAll();
+
+    // On Windows, it is usual to leave the critical section before
+    // waking the condition variable.
     Leave();
+    WakeAll();
   }
 
  private:
@@ -69,6 +75,7 @@ class RequestQueue {
     InitializeCriticalSection(&cs_);
   }
   void Term() {
+    DeleteCriticalSection(&cs_);
   }
   void Enter() {
     EnterCriticalSection(&cs_);
@@ -86,8 +93,8 @@ class RequestQueue {
     WakeAllConditionVariable(&cv_);
   }
 
-  CRITICAL_SECTION cs_;
-  CONDITION_VARIABLE cv_;
+  CRITICAL_SECTION cs_{};
+  CONDITION_VARIABLE cv_{};
 
   std::queue<std::unique_ptr<Session>> sessions_;
   bool abort_ = false;
