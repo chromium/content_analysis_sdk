@@ -5,10 +5,10 @@ cmake_minimum_required(VERSION 3.22)
 
 project(chrome_enterprise_connector_local_analysis)
 
-# Ensure a C++14 compiler is used.
+# Ensure a C++14 compiler is used
 set(CMAKE_CXX_STANDARD 14)
 
-# Determine the operating system being targeted.
+# Determine the operating system being targeted
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   set(WIN TRUE)
   set(MAC FALSE)
@@ -26,9 +26,11 @@ endif()
 # Set the path to the protoc protobuf compiler.
 if(WIN)
   set(PROTOC ${PROJECT_BINARY_DIR}/vcpkg/installed/x64-windows/tools/protobuf/protoc.exe)
-elseif(MAC)
+endif()
+if(MAC)
   set(PROTOC ${PROJECT_BINARY_DIR}/vcpkg/installed/x64-osx/tools/protobuf/protoc)
-elseif(LINUX)
+endif()
+if(LINUX)
   set(PROTOC ${PROJECT_BINARY_DIR}/vcpkg/installed/x64-linux/tools/protobuf/protoc)
 endif()
 
@@ -70,17 +72,16 @@ if(WIN)
     ./agent/src/session_win.cc
     ./agent/src/session_win.h
   )
-  set(PLATFORM_QUEUED_AGENT_DEMO_CODE
-    ./demo/queued_agent_win.cc
-  )
-elseif(MAC)
+endif()
+if(MAC)
   set(PLATFORM_AGENT_CODE
     ./agent/src/agent_mac.cc
     ./agent/src/agent_mac.h
     ./agent/src/session_mac.cc
     ./agent/src/session_mac.h
   )
-elseif(LINUX)
+endif()
+if(LINUX)
   set(PLATFORM_AGENT_CODE
     ./agent/src/agent_posix.cc
     ./agent/src/agent_posix.h
@@ -100,12 +101,14 @@ if(WIN)
     ./browser/src/client_win.cc
     ./browser/src/client_win.h
   )
-elseif(MAC)
+endif()
+if(MAC)
   set(PLATFORM_BROWSER_CODE
     ./browser/src/client_mac.cc
     ./browser/src/client_mac.h
   )
-elseif(LINUX)
+endif()
+if(LINUX)
   set(PLATFORM_BROWSER_CODE
     ./browser/src/client_posix.cc
     ./browser/src/client_posix.h
