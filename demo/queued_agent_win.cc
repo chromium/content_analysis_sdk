@@ -32,11 +32,9 @@ class RequestQueue {
   void push(std::unique_ptr<Session> session) {
     Enter();
     sessions_.push(std::move(session));
-
-    // On Windows, it is usual to leave the critical section before
-    // waking the condition variable.
-    Leave();
+    // Wake before leaving to prevent unpredicatable scheduling.
     WakeOne();
+    Leave();
   }
 
   // Pop the next request from the queue, blocking if necessary until a session
@@ -62,9 +60,7 @@ class RequestQueue {
   void abort() {
     Enter();
     abort_ = true;
-
-    // On Windows, it is usual to leave the critical section before
-    // waking the condition variable.
+    // Wake before leaving to prevent unpredicatable scheduling.
     Leave();
     WakeAll();
   }

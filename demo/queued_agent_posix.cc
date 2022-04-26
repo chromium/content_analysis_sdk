@@ -32,6 +32,7 @@ class RequestQueue {
   void push(std::unique_ptr<Session> session) {
     Enter();
     sessions_.push(std::move(session));
+    // Wake before leaving to prevent unpredicatable scheduling.
     WakeOne();
     Leave();
   }
@@ -59,6 +60,7 @@ class RequestQueue {
   void abort() {
     Enter();
     abort_ = true;
+    // Wake before leaving to prevent unpredicatable scheduling.
     WakeAll();
     Leave();
   }
