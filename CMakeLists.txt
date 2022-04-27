@@ -5,10 +5,30 @@ cmake_minimum_required(VERSION 3.22)
 
 project(chrome_enterprise_connector_local_analysis)
 
-# Set the path to the protoc protobuf compiler.
+# Ensure a C++14 compiler is used.
+set(CMAKE_CXX_STANDARD 14)
+
+# Determine the operating system being targeted.
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-  set(PROTOC ${PROJECT_BINARY_DIR}/vcpkg/installed/x64-windows/tools/protobuf/protoc.exe)
+  set(WIN TRUE)
+  set(MAC FALSE)
+  set(LINUX FALSE)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  set(WIN FALSE)
+  set(MAC TRUE)
+  set(LINUX FALSE)
 else()
+  set(WIN FALSE)
+  set(MAC FALSE)
+  set(LINUX TRUE)
+endif()
+
+# Set the path to the protoc protobuf compiler.
+if(WIN)
+  set(PROTOC ${PROJECT_BINARY_DIR}/vcpkg/installed/x64-windows/tools/protobuf/protoc.exe)
+elseif(MAC)
+  set(PROTOC ${PROJECT_BINARY_DIR}/vcpkg/installed/x64-osx/tools/protobuf/protoc)
+elseif(LINUX)
   set(PROTOC ${PROJECT_BINARY_DIR}/vcpkg/installed/x64-linux/tools/protobuf/protoc)
 endif()
 
@@ -43,7 +63,7 @@ set(BROWSER_INCLUDES
 # The SDK contains platform specific code for each of the supported platforms.
 # ${PLATFORM_AGENT_CODE} holds the list of source files needed for the current
 # platform being built.
-if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+if(WIN)
   set(PLATFORM_AGENT_CODE
     ./agent/src/agent_win.cc
     ./agent/src/agent_win.h
@@ -53,7 +73,14 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   set(PLATFORM_QUEUED_AGENT_DEMO_CODE
     ./demo/queued_agent_win.cc
   )
-else()
+elseif(MAC)
+  set(PLATFORM_AGENT_CODE
+    ./agent/src/agent_mac.cc
+    ./agent/src/agent_mac.h
+    ./agent/src/session_mac.cc
+    ./agent/src/session_mac.h
+  )
+elseif(LINUX)
   set(PLATFORM_AGENT_CODE
     ./agent/src/agent_posix.cc
     ./agent/src/agent_posix.h
@@ -68,12 +95,17 @@ endif()
 # The SDK contains platform specific code for each of the supported platforms.
 # ${PLATFORM_BROWSER_CODE} holds the list of source files needed for the current
 # platform being built.
-if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+if(WIN)
   set(PLATFORM_BROWSER_CODE
     ./browser/src/client_win.cc
     ./browser/src/client_win.h
   )
-else()
+elseif(MAC)
+  set(PLATFORM_BROWSER_CODE
+    ./browser/src/client_mac.cc
+    ./browser/src/client_mac.h
+  )
+elseif(LINUX)
   set(PLATFORM_BROWSER_CODE
     ./browser/src/client_posix.cc
     ./browser/src/client_posix.h
@@ -119,9 +151,11 @@ target_include_directories(agent PRIVATE ${AGENT_INCLUDES})
 target_link_libraries(agent PRIVATE cac_agent)
 
 # A demo agent that queues up requests for a background thread.
-add_executable(queued_agent ${PLATFORM_QUEUED_AGENT_DEMO_CODE})
-target_include_directories(queued_agent PRIVATE ${AGENT_INCLUDES})
-target_link_libraries(queued_agent PRIVATE cac_agent)
+if (WIN OR LINUX)
+  add_executable(queued_agent ${PLATFORM_QUEUED_AGENT_DEMO_CODE})
+  target_include_directories(queued_agent PRIVATE ${AGENT_INCLUDES})
+  target_link_libraries(queued_agent PRIVATE cac_agent)
+endif()
 
 # The demo client executable.
 add_executable(browser ./demo/client.cc)
