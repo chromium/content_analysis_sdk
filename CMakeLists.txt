@@ -70,6 +70,9 @@ if(WIN)
     ./agent/src/session_win.cc
     ./agent/src/session_win.h
   )
+  set(PLATFORM_QUEUED_AGENT_DEMO_CODE
+    ./demo/queued_agent_win.cc
+  )
 elseif(MAC)
   set(PLATFORM_AGENT_CODE
     ./agent/src/agent_mac.cc
@@ -83,6 +86,9 @@ elseif(LINUX)
     ./agent/src/agent_posix.h
     ./agent/src/session_posix.cc
     ./agent/src/session_posix.h
+  )
+  set(PLATFORM_QUEUED_AGENT_DEMO_CODE
+    ./demo/queued_agent_posix.cc
   )
 endif()
 
@@ -143,6 +149,13 @@ target_link_libraries(cac_browser PUBLIC protobuf::libprotoc protobuf::libprotob
 add_executable(agent ./demo/agent.cc)
 target_include_directories(agent PRIVATE ${AGENT_INCLUDES})
 target_link_libraries(agent PRIVATE cac_agent)
+
+# A demo agent that queues up requests for a background thread.
+if (WIN OR LINUX)
+  add_executable(queued_agent ${PLATFORM_QUEUED_AGENT_DEMO_CODE})
+  target_include_directories(queued_agent PRIVATE ${AGENT_INCLUDES})
+  target_link_libraries(queued_agent PRIVATE cac_agent)
+endif()
 
 # The demo client executable.
 add_executable(browser ./demo/client.cc)
