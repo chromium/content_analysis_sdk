@@ -70,6 +70,9 @@ if(WIN)
     ./agent/src/session_win.cc
     ./agent/src/session_win.h
   )
+  set(PLATFORM_QUEUED_AGENT_DEMO_CODE
+    ./demo/queued_agent_win.cc
+  )
 elseif(MAC)
   set(PLATFORM_AGENT_CODE
     ./agent/src/agent_mac.cc
