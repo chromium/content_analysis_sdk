@@ -94,7 +94,10 @@ class Session {
 // one Agent can be created for a given partner URI.
 //
 // Agent instances should outlive all Session instances created with it.
-// Otherwise those sessions become invalid.
+// Otherwise those sessions become invalid.  Agent instances are not thread
+// safe except for Stop() which can be called from any thread to shutdown the
+// agent.  Outstanding Sessions created from this agent may or may not still
+// complete.
 //
 // See the demo directory for an example of how to use this class.
 class Agent {
@@ -115,8 +118,10 @@ class Agent {
   // properly initialized and are ready for use.
   virtual std::unique_ptr<Session> GetNextSession() = 0;
 
-  // Prepares the agent for graceful shutdown.
-  // Unblocks any sessions waiting on that client.
+  // Prepares the agent for graceful shutdown.  A function blocked on
+  // GetNextSession() will return with a null session.  While Agent is
+  // generally not thread safe, this method is the exception and may be
+  // called from any thread.
   virtual int Stop() = 0;
 
  protected:
