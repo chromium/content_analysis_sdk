@@ -25,14 +25,14 @@ ClientWin::ClientWin(const Uri& uri) : ClientBase(uri) {
 DWORD ClientWin::ConnectToPipe(HANDLE* handle) {
   HANDLE h = INVALID_HANDLE_VALUE;
   while (h == INVALID_HANDLE_VALUE) {
-    h = CreateFile(pipename_.c_str(), GENERIC_READ | GENERIC_WRITE, 0,
+    h = CreateFileA(pipename_.c_str(), GENERIC_READ | GENERIC_WRITE, 0,
         nullptr, OPEN_EXISTING, 0, nullptr);
     if (h == INVALID_HANDLE_VALUE) {
       if (GetLastError() != ERROR_PIPE_BUSY) {
         break;
       }
 
-      if (!WaitNamedPipe(pipename_.c_str(), NMPWAIT_USE_DEFAULT_WAIT)) {
+      if (!WaitNamedPipeA(pipename_.c_str(), NMPWAIT_USE_DEFAULT_WAIT)) {
         break;
       }
     }

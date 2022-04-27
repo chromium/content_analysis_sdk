@@ -57,7 +57,7 @@ int AgentWin::Stop() {
 DWORD AgentWin::CreatePipe(HANDLE* handle) {
   DWORD err = ERROR_SUCCESS;
 
-  *handle = CreateNamedPipe(pipename_.c_str(),
+  *handle = CreateNamedPipeA(pipename_.c_str(),
     PIPE_ACCESS_DUPLEX, PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT |
         PIPE_REJECT_REMOTE_CLIENTS,
     PIPE_UNLIMITED_INSTANCES, kBufferSize, kBufferSize, 0, nullptr);
