@@ -64,14 +64,6 @@ message ContentData {
 // The proto in the Chromium codebase is the source of truth, the version here
 // should always be in sync with it (https://osscs.corp.google.com/chromium/chromium/src/+/main:components/enterprise/common/proto/connectors.proto;l=87;drc=a8fb6888aff535f27654f03cd1643868ba066de9).
 message ContentAnalysisRequest {
-  // The TokenID for Enterprise-enrolled devices.  This identifies a specific
-  // chrome instance.
-  optional string device_token = 1;
-
-  // Firebase Cloud Messaging token used to notify this client of the verdict.
-  // This identifies a specific chrome instance.
-  optional string fcm_notification_token = 2;
-
   // Token used to correlate requests and responses. This is different than the
   // FCM token in that it is unique for each request.
   optional string request_token = 5;
@@ -84,10 +76,6 @@ message ContentAnalysisRequest {
 
   // The tags configured for the URL that triggered the content analysis.
   repeated string tags = 11;
-
-  // Additional information about the browser, device or profile so events can
-  // be reported with device/user identifiable information.
-  optional ClientMetadata client_metadata = 12;
 
   oneof content_data {
     // The text content to analyze in local content analysis request. This field
@@ -105,7 +93,7 @@ message ContentAnalysisRequest {
   optional int64 expires_at = 15;
 
   // Reserved to make sure there is no overlap with DeepScanningClientRequest.
-  reserved 3, 4, 6 to 8;
+  reserved 1 to 4, 6 to 8, 12;
 }
 
 
