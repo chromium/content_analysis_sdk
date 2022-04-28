@@ -77,6 +77,7 @@ DWORD AgentWin::ConnectPipe(HANDLE handle) {
 void AgentWin::Shutdown() {
   if (hPipe_ != INVALID_HANDLE_VALUE) {
     CloseHandle(hPipe_);
+    hPipe_ = INVALID_HANDLE_VALUE;
   }
 }
 
