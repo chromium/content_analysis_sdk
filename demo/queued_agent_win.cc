@@ -244,7 +244,7 @@ int main(int argc, char* argv[]) {
       nullptr, 0, ProcessRequests, &request_queue, 0, &tid));
 
   // Each agent uses a unique URI to identify itself with Google Chrome.
-  auto agent = Agent::Create("content_analysis_sdk");
+  auto agent = Agent::Create({"content_analysis_sdk", true});
   if (!agent) {
     std::cout << "[Demo] Error starting agent" << std::endl;
     return 1;

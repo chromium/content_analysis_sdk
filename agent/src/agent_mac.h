@@ -13,7 +13,7 @@ namespace sdk {
 // Agent implementaton for macos.
 class AgentMac : public AgentBase {
  public:
-  AgentMac(const Uri& uri);
+  AgentMac(Config config);
 
   std::unique_ptr<Session> GetNextSession() override;
 

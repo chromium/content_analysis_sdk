@@ -14,14 +14,16 @@ namespace sdk {
 class AgentBase : public Agent {
  public:
   // Agent:
-  const Uri& GetUri() const override;
+  const Config& GetConfig() const override;
   int Stop() override;
 
  protected:
-  AgentBase(const Uri& uri);
+  AgentBase(Config config);
+
+  const Config& configuration() const { return config_; }
 
  private:
-  Uri uri_;
+  Config config_;
 };
 
 }  // namespace sdk

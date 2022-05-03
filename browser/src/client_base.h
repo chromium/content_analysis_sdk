@@ -14,13 +14,15 @@ namespace sdk {
 class ClientBase : public Client {
  public:
   // Client:
-  const Uri& GetUri() const override;
+  const Config& GetConfig() const override;
 
  protected:
-  ClientBase(const Uri& uri);
+  ClientBase(Config config);
 
- private:
-  Uri uri_;
+  const Config& configuration() const { return config_; }
+
+private:
+  Config config_;
 };
 
 }  // namespace sdk

@@ -30,16 +30,26 @@ namespace sdk {
 // See the demo directory for an example of how to use this class.
 class Client {
  public:
-  // A unique identifier for Google Chrome's content analysis partner.
-  using Uri = std::string;
+   // Configuration options where creating an agent.  `name` is used to create
+   // a channel between the agent and Google Chrome.  
+   struct Config {
+     // Used to create a channel between the agent and Google Chrome.  Both must
+     // use the same name to properly rendezvous with each other.  The channel
+     // is platform specific.
+     std::string name;
+
+     // Set to true if there is a different agent instance per OS user.  Defaults
+     // to false.
+     bool user_specific = false;
+   };
 
   // Returns a new client instance and calls Start().
-  static std::unique_ptr<Client> Create(const Uri& uri);
+  static std::unique_ptr<Client> Create(Config config);
 
   virtual ~Client() = default;
 
-  // Returns the URI of the partner.
-  virtual const Uri& GetUri() const = 0;
+  // Returns the configuration parameters of the client.
+  virtual const Config& GetConfig() const = 0;
 
   // Sets an analysis request to the agent and waits for a response.
   virtual int Send(const ContentAnalysisRequest& request,

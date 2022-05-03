@@ -7,10 +7,10 @@
 namespace content_analysis {
 namespace sdk {
 
-ClientBase::ClientBase(const Uri& uri) : uri_(uri) {}
+ClientBase::ClientBase(Config config) : config_(config) {}
 
-const Client::Uri& ClientBase::GetUri() const {
-  return uri_;
+const Client::Config& ClientBase::GetConfig() const {
+  return config_;
 }
 
 }  // namespace sdk

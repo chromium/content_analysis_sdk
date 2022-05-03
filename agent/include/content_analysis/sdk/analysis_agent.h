@@ -101,16 +101,26 @@ class Session {
 // See the demo directory for an example of how to use this class.
 class Agent {
  public:
-  // A unique identifier for Google Chrome's content analysis partner.
-  using Uri = std::string;
+  // Configuration options where creating an agent.  `name` is used to create
+  // a channel between the agent and Google Chrome.  
+  struct Config {
+    // Used to create a channel between the agent and Google Chrome.  Both must
+    // use the same name to properly rendezvous with each other.  The channel
+    // is platform specific.
+    std::string name;
+
+    // Set to true if there is a different agent instance per OS user.  Defaults
+    // to false.
+    bool user_specific = false;
+  };
 
   // Returns a new agent instance and calls Start().
-  static std::unique_ptr<Agent> Create(const Uri& uri);
+  static std::unique_ptr<Agent> Create(Config config);
 
   virtual ~Agent() = default;
 
-  // Returns the URI of the agent.
-  virtual const Uri& GetUri() const = 0;
+  // Returns the configuration parameters of the agent.
+  virtual const Config& GetConfig() const = 0;
 
   // Returns a new content analysis session from Google Chrome.
   // The session's associated request and response have already been
