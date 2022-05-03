@@ -2,17 +2,19 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <utility>
+
 #include "client_posix.h"
 
 namespace content_analysis {
 namespace sdk {
 
 // static
-std::unique_ptr<Client> Client::Create(const Uri& uri) {
-  return std::make_unique<ClientPosix>(uri);
+std::unique_ptr<Client> Client::Create(Config config) {
+  return std::make_unique<ClientPosix>(std::move(config));
 }
 
-ClientPosix::ClientPosix(const Uri& uri) : ClientBase(uri) {}
+ClientPosix::ClientPosix(Config config) : ClientBase(std::move(config)) {}
 
 int ClientPosix::Send(const ContentAnalysisRequest& request,
                     ContentAnalysisResponse* response) {

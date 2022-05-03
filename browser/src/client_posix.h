@@ -13,7 +13,7 @@ namespace sdk {
 // Client implementaton for Posix.
 class ClientPosix : public ClientBase {
  public:
-  ClientPosix(const Uri& uri);
+  ClientPosix(Config config);
 
   // Client:
   int Send(const ContentAnalysisRequest& request,
