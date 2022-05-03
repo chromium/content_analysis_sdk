@@ -117,7 +117,20 @@ include("${PROJECT_BINARY_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake")
 find_package(Protobuf CONFIG REQUIRED)
 # Unit tests
 enable_testing()
+find_package(GTest CONFIG REQUIRED)
 include(GoogleTest)
+
+add_executable(
+  agent_test_shell
+  ../agent/src/agent_test_shell.cc
+)
+target_link_libraries(
+  agent_test_shell
+  PUBLIC 
+  GTest::gtest GTest::gtest_main
+)
+
+gtest_discover_tests(agent_test_shell) 
 
 # Builds the content analysis connector agent linker library.  This library is linked
 # into the agent in order to listen for and process content analysis requests
