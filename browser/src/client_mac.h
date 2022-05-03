@@ -13,7 +13,7 @@ namespace sdk {
 // Client implementaton for Mac.
 class ClientMac : public ClientBase {
  public:
-  ClientMac(const Uri& uri);
+  ClientMac(Config config);
 
   // Client:
   int Send(const ContentAnalysisRequest& request,
