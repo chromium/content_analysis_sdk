@@ -23,7 +23,7 @@ std::unique_ptr<Client> Client::Create(Config config) {
 
 ClientWin::ClientWin(Config config) : ClientBase(std::move(config)) {
   std::string pipename =
-    internal::GetPipName(configuration().name, configuration().user_specific);
+    internal::GetPipeName(configuration().name, configuration().user_specific);
   if (pipename.empty())
     return;
 

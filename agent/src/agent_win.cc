@@ -25,7 +25,7 @@ std::unique_ptr<Agent> Agent::Create(Config config) {
 
 AgentWin::AgentWin(Config config) : AgentBase(std::move(config)) {
   std::string pipename =
-      internal::GetPipName(configuration().name, configuration().user_specific);
+      internal::GetPipeName(configuration().name, configuration().user_specific);
   if (pipename.empty())
     return;
 

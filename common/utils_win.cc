@@ -44,7 +44,7 @@ std::string GetUserSID() {
   return sid;
 }
 
-std::string GetPipName(const std::string& base, bool user_specific) {
+std::string GetPipeName(const std::string& base, bool user_specific) {
   std::string pipename = "\\\\.\\pipe\\" + base;
   if (user_specific) {
     pipename += ".";

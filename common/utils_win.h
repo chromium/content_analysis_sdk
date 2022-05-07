@@ -21,7 +21,7 @@ std::string GetUserSID();
 // Returns the name of the pipe that should be used to communicate between
 // the agent and Google Chrome.  If `sid` is non-empty, make the pip name
 // specific to that user.
-std::string GetPipName(const std::string& base, bool user_specific);
+std::string GetPipeName(const std::string& base, bool user_specific);
 
 }  // internal
 }  // namespace sdk
