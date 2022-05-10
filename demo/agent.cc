@@ -147,7 +147,7 @@ void AnalyzeContent(std::unique_ptr<Session> session) {
 
 int main(int argc, char* argv[]) {
   // Each agent uses a unique URI to identify itself with Google Chrome.
-  auto agent = Agent::Create("content_analysis_sdk");
+  auto agent = Agent::Create({"content_analysis_sdk"});
   if (!agent) {
     std::cout << "[Demo] Error starting agent" << std::endl;
     return 1;

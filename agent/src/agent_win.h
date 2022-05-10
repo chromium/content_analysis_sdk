@@ -17,7 +17,7 @@ namespace sdk {
 // Agent implementaton for Windows.
 class AgentWin : public AgentBase {
  public:
-  AgentWin(const Uri& uri);
+  AgentWin(Config config);
   ~AgentWin() override;
 
   // Agent:

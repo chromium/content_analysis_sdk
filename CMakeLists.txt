@@ -53,10 +53,12 @@ add_custom_target(proto ALL DEPENDS ${PROJECT_BINARY_DIR}/gen/content_analysis/s
 # and response objects used to communicate with Google Chrome.
 set(AGENT_INCLUDES
   ./agent/include
+  .
   ${PROJECT_BINARY_DIR}/gen
 )
 set(BROWSER_INCLUDES
   ./browser/include
+  .
   ${PROJECT_BINARY_DIR}/gen
 )
 
@@ -69,6 +71,8 @@ if(WIN)
     ./agent/src/agent_win.h
     ./agent/src/session_win.cc
     ./agent/src/session_win.h
+    ./common/utils_win.cc
+    ./common/utils_win.h
   )
   set(PLATFORM_QUEUED_AGENT_DEMO_CODE
     ./demo/queued_agent_win.cc
@@ -99,6 +103,8 @@ if(WIN)
   set(PLATFORM_BROWSER_CODE
     ./browser/src/client_win.cc
     ./browser/src/client_win.h
+    ./common/utils_win.cc
+    ./common/utils_win.h
   )
 elseif(MAC)
   set(PLATFORM_BROWSER_CODE

@@ -89,7 +89,7 @@ void PrintHelp() {
 
 int main(int argc, char* argv[]) {
   // Each client uses a unique URI to identify itself with Google Chrome.
-  auto client = Client::Create("content_analysis_sdk");
+  auto client = Client::Create({"content_analysis_sdk"});
   if (!client) {
     std::cout << "[Demo] Error starting client" << std::endl;
     return 1;

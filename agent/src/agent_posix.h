@@ -13,7 +13,7 @@ namespace sdk {
 // Agent implementaton for linux.
 class AgentPosix : public AgentBase {
  public:
-  AgentPosix(const Uri& uri);
+  AgentPosix(Config config);
 
   std::unique_ptr<Session> GetNextSession() override;
 

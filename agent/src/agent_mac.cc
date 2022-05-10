@@ -9,11 +9,11 @@ namespace content_analysis {
 namespace sdk {
 
 // static
-std::unique_ptr<Agent> Agent::Create(const Uri& uri) {
-  return std::make_unique<AgentMac>(uri);
+std::unique_ptr<Agent> Agent::Create(Config config) {
+  return std::make_unique<AgentMac>(std::move(config));
 }
 
-AgentMac::AgentMac(const Uri& uri) : AgentBase(uri) {}
+AgentMac::AgentMac(Config config) : AgentBase(std::move(config)) {}
 
 std::unique_ptr<Session> AgentMac::GetNextSession() {
   return std::make_unique<SessionMac>();

@@ -2,6 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <utility>
+#include <vector>
+
+#include <windows.h>
+#include <sddl.h>
+
+#include "common/utils_win.h"
+
 #include "agent_win.h"
 #include "session_win.h"
 
@@ -11,12 +19,17 @@ namespace sdk {
 const DWORD kBufferSize = 4096;
 
 // static
-std::unique_ptr<Agent> Agent::Create(const Uri& uri) {
-  return std::make_unique<AgentWin>(uri);
+std::unique_ptr<Agent> Agent::Create(Config config) {
+  return std::make_unique<AgentWin>(std::move(config));
 }
 
-AgentWin::AgentWin(const Uri& uri) : AgentBase(uri) {
-  pipename_ = "\\\\.\\pipe\\" + uri;
+AgentWin::AgentWin(Config config) : AgentBase(std::move(config)) {
+  std::string pipename =
+      internal::GetPipeName(configuration().name, configuration().user_specific);
+  if (pipename.empty())
+    return;
+
+  pipename_ = pipename;
   CreatePipe(&hPipe_);
 }
 

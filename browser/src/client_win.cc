@@ -4,7 +4,10 @@
 
 #include <windows.h>
 
+#include <utility>
 #include <vector>
+
+#include "common/utils_win.h"
 
 #include "client_win.h"
 
@@ -14,12 +17,17 @@ namespace sdk {
 const DWORD kBufferSize = 4096;
 
 // static
-std::unique_ptr<Client> Client::Create(const Uri& uri) {
-  return std::make_unique<ClientWin>(uri);
+std::unique_ptr<Client> Client::Create(Config config) {
+  return std::make_unique<ClientWin>(std::move(config));
 }
 
-ClientWin::ClientWin(const Uri& uri) : ClientBase(uri) {
-  pipename_ = "\\\\.\\pipe\\" + uri;
+ClientWin::ClientWin(Config config) : ClientBase(std::move(config)) {
+  std::string pipename =
+    internal::GetPipeName(configuration().name, configuration().user_specific);
+  if (pipename.empty())
+    return;
+
+  pipename_ = pipename;
 }
 
 DWORD ClientWin::ConnectToPipe(HANDLE* handle) {
