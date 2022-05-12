@@ -53,19 +53,15 @@ message ContentMetaData {
   reserved 4, 5, 6;
 }
 
-// The data to analyze in the request.  These fields are mutually exclusive,
-// only one will be set in any content analysis request.
-message ContentData {
-  optional string text_content = 1;
-  optional string file_path = 2;
-}
-
-// Analysis request sent from Google Chrome to agent.
+// Analysis request sent from chrome to backend.
+// The proto in the Chromium codebase is the source of truth, the version here
+// should always be in sync with it (https://osscs.corp.google.com/chromium/chromium/src/+/main:components/enterprise/common/proto/connectors.proto;l=87;drc=a8fb6888aff535f27654f03cd1643868ba066de9).
 message ContentAnalysisRequest {
-  // Token used to correlate requests and responses.
+  // Token used to correlate requests and responses. This is different than the
+  // FCM token in that it is unique for each request.
   optional string request_token = 5;
 
-  // Which analysis trigger fired this request.
+  // Which enterprise connector fired this request.
   optional AnalysisConnector analysis_connector = 9;
 
   // Information about the data that triggered the content analysis request.
@@ -74,15 +70,24 @@ message ContentAnalysisRequest {
   // The tags configured for the URL that triggered the content analysis.
   repeated string tags = 11;
 
-  // The actual data to be analyzed.
-  optional ContentData content_data = 100;
+  oneof content_data {
+    // The text content to analyze in local content analysis request. This field
+    // is mutually exclusive with file_path.
+    string text_content = 13;
 
-  // The absolute deadline Chrome will wait until a respone from the agent is received.
-  optional int64 expires_at = 101;
+    // The full path to the file to analyze in local content analysis request.
+    // The path is expressed in a platform dependent way. This field is mutually
+    // exclusive with text_content.
+    string file_path = 14;
+  }
 
+  // The absolute deadline (timestamp in UTC Epoch time) that Chrome will wait
+  // until a response from the agent is received.
+  optional int64 expires_at = 15;
+
+  // Reserved to make sure there is no overlap with DeepScanningClientRequest.
   reserved 1 to 4, 6 to 8, 12;
 }
-
 
 // Verdict response sent from agent to Google Chrome.
 message ContentAnalysisResponse {
