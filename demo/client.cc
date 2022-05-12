@@ -112,11 +112,10 @@ int main(int argc, char* argv[]) {
     request_data->set_filename(filename);
   }
 
-  auto content_data = request.mutable_content_data();
   if (!text_content.empty()) {
-    content_data->set_text_content(text_content);
+    request.set_text_content(text_content);
   } else if (!file_path.empty()) {
-    content_data->set_file_path(file_path);
+    request.set_file_path(file_path);
   } else {
     std::cout << "[Demo] Specify text content or a file path." << std::endl;
     PrintHelp();

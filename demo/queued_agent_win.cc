@@ -131,8 +131,8 @@ void DumpRequest(const ContentAnalysisRequest& request) {
       ? request.request_data().digest() : "<No digest>";
 
   std::string file_path =
-      request.has_content_data() && request.content_data().has_file_path()
-      ? request.content_data().file_path() : "None, bulk text entry";
+      request.has_file_path()
+      ? request.file_path() : "None, bulk text entry";
 
   std::cout << "Request: " << request.request_token() << std::endl;
   std::cout << "  Connector: " << connector << std::endl;
@@ -185,16 +185,13 @@ void AnalyzeContent(std::unique_ptr<Session> session) {
   bool block = false;
   bool success = true;
 
-  if (session->GetRequest().has_content_data() &&
-      session->GetRequest().content_data().has_text_content()) {
+  if (session->GetRequest().has_text_content()) {
     block = ShouldBlockRequest(
-        session->GetRequest().content_data().text_content());
-  } else if (session->GetRequest().has_content_data() &&
-             session->GetRequest().content_data().has_file_path()) {
+        session->GetRequest().text_content());
+  } else if (session->GetRequest().has_file_path()) {
     std::string content;
     success =
-        ReadContentFromFile(session->GetRequest().content_data().file_path(),
-                            &content);
+        ReadContentFromFile(session->GetRequest().file_path(), &content);
     if (success) {
       block = ShouldBlockRequest(content);
     }
