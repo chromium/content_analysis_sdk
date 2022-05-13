@@ -46,11 +46,18 @@ The following must be installed on the computer before building the demo:
   In Debian-based distributions use `sudo apt intall coreutils`.
   In Red Hat distributions use `sudo yum install coreutils`.
 
+These dependencies can be installed with the `prepare_build` script in this repository.
+
 ### Running prepare_build
 
 First get things ready by installing required dependencies:
+Linux or Mac:
 ```
 $SDK_DIR/prepare_build <build-dir>
+```
+Windows:
+```
+$SDK_DIR/prepare_build.bat <build-dir>
 ```
 where `<build-dir>` is the path to a directory where the demo will be built.
 By default, if no argument is provided, a directory named `build` will be
@@ -58,10 +65,11 @@ created in the project root. Any output within the `build/` directory will
 be ignored by version control.
 
 `prepare_build` performs the following steps:
-1. Downloads the vcpkg package manager.
-2. Downloads and builds the Google Protocol Buffers library.
-3. Generates the headers and sources for the content analysis protobuf message.
-4. Creates build files for your specific platform.
+1. (Mac only) Downloads and installs brew, cmake, coreutils, vcpkg and pkg-config
+2. Downloads the vcpkg package manager.
+3. Downloads and builds the Google Protocol Buffers library.
+4. Generates the headers and sources for the content analysis protobuf message.
+5. Creates build files for your specific platform.
 
 ### Cmake Targets
 

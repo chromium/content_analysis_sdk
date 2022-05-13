@@ -33,6 +33,19 @@ mkdir -p $BUILD_DIR/gen
 # Enter build directory
 cd $BUILD_DIR
 
+# MacOS-specific installations
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  if [[ ! $(command -v brew) ]]; then
+    BREW_INSTALL="https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh"
+    /bin/bash -c "$(curl -fsSL $BREW_INSTALL)"
+  fi
+
+  brew install cmake
+  brew install coreutils
+  brew install vcpkg
+  brew install pkg-config
+fi
+
 # Install vcpkg and use it to install Google Protocol Buffers.
 test -d vcpkg || (
   git clone https://github.com/microsoft/vcpkg
