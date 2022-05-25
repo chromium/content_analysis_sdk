@@ -50,8 +50,26 @@ message ContentMetaData {
   // Sha256 digest of file.
   optional string digest = 3;
 
-  reserved 4, 5, 6;
+  // Optional email address of user.  This field may be empty if the user
+  // is not signed in.
+  optional string email = 5;
+
+  reserved 4, 6;
 }
+
+message ClientMetadata {
+  // Describes the browser uploading a scan request.
+  message Browser {
+    // This is omitted on scans triggered at the profile level.
+    optional string machine_user = 4;
+
+    reserved 1 to 3;
+  };
+  optional Browser browser = 1;
+
+  reserved 2 to 3;
+};
+
 
 // Analysis request sent from chrome to backend.
 // The proto in the Chromium codebase is the source of truth, the version here
@@ -70,6 +88,10 @@ message ContentAnalysisRequest {
   // The tags configured for the URL that triggered the content analysis.
   repeated string tags = 11;
 
+  // Additional information about the browser, device or profile so events can
+  // be reported with device/user identifiable information.
+  optional ClientMetadata client_metadata = 12;
+
   oneof content_data {
     // The text content to analyze in local content analysis request. This field
     // is mutually exclusive with file_path.
@@ -86,7 +108,7 @@ message ContentAnalysisRequest {
   optional int64 expires_at = 15;
 
   // Reserved to make sure there is no overlap with DeepScanningClientRequest.
-  reserved 1 to 4, 6 to 8, 12;
+  reserved 1 to 4, 6 to 8;
 }
 
 // Verdict response sent from agent to Google Chrome.
