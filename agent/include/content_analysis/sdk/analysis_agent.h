@@ -74,6 +74,10 @@ class ContentAnalysisEvent {
   // other methods of this class will fail.
   virtual int Close() = 0;
 
+  // Retrives information about the browser that generated this content
+  // analysis event.
+  virtual const BrowserInfo& GetBrowserInfo() = 0;
+
   // Retrieves a read-only reference to the content analysis request received
   // from Google Chrome.
   virtual const ContentAnalysisRequest& GetRequest() const = 0;
@@ -204,7 +208,7 @@ int UpdateResponse(ContentAnalysisResponse& response,
                    const std::string& tag,
                    ContentAnalysisResponse::Result::Status status);
 
-// Sets the response verdict of a event to `action`.  This is a convenience
+// Sets the response verdict of an event to `action`.  This is a convenience
 // function that is equivalent to the following:
 //
 //   auto result = event->GetResponse().mutable_results(0);
@@ -217,7 +221,7 @@ int SetEventVerdictTo(
     ContentAnalysisEvent* event,
     ContentAnalysisResponse::Result::TriggeredRule::Action action);
 
-// Sets the reponse verdict of a event to "block".  This is a convenience
+// Sets the reponse verdict of an event to "block".  This is a convenience
 // function that is equivalent to the following:
 //
 //   SetEventVerdictTo(event,
