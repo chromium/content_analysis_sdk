@@ -45,8 +45,7 @@ The following must be installed on the computer before building the demo:
 - On linux, the `realpath` shell tool, available in the `coreutils` package.
   In Debian-based distributions use `sudo apt intall coreutils`.
   In Red Hat distributions use `sudo yum install coreutils`.
-
-These dependencies can be installed with the `prepare_build` script in this repository.
+- On Mac, use `brew install cmake coreutils pkg-config` or an equivalent setup
 
 ### Running prepare_build
 
@@ -60,10 +59,9 @@ created in the project root. Any output within the `build/` directory will
 be ignored by version control.
 
 `prepare_build` performs the following steps:
-1. (Mac only) Downloads and installs brew, cmake, coreutils and pkg-config
-2. Downloads the vcpkg package manager.
-3. Downloads and builds the Google Protocol Buffers library.
-4. Creates build files for your specific platform.
+1. Downloads the vcpkg package manager.
+2. Downloads and builds the Google Protocol Buffers library.
+3. Creates build files for your specific platform.
 
 ### Cmake Targets
 
