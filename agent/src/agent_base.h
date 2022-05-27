@@ -5,6 +5,8 @@
 #ifndef CONTENT_ANALYSIS_AGENT_SRC_AGENT_BASE_H_
 #define CONTENT_ANALYSIS_AGENT_SRC_AGENT_BASE_H_
 
+#include <memory>
+
 #include "content_analysis/sdk/analysis_agent.h"
 
 namespace content_analysis {
@@ -18,12 +20,14 @@ class AgentBase : public Agent {
   int Stop() override;
 
  protected:
-  AgentBase(Config config);
+  AgentBase(Config config, std::unique_ptr<AgentEventHandler> handler);
 
+  AgentEventHandler* handler() const { return handler_.get(); }
   const Config& configuration() const { return config_; }
 
  private:
   Config config_;
+  std::unique_ptr<AgentEventHandler> handler_;
 };
 
 }  // namespace sdk

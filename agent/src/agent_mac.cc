@@ -3,21 +3,24 @@
 // found in the LICENSE file.
 
 #include "agent_mac.h"
-#include "session_mac.h"
+#include "event_mac.h"
 
 namespace content_analysis {
 namespace sdk {
 
 // static
-std::unique_ptr<Agent> Agent::Create(Config config) {
-  return std::make_unique<AgentMac>(std::move(config));
+std::unique_ptr<Agent> Agent::Create(
+    Config config,
+    std::unique_ptr<AgentEventHandler> handler) {
+  return std::make_unique<AgentMac>(std::move(config), std::move(handler));
 }
 
-AgentMac::AgentMac(Config config) : AgentBase(std::move(config)) {}
+AgentMac::AgentMac(
+    Config config,
+    std::unique_ptr<AgentEventHandler> handler)
+  : AgentBase(std::move(config), std::move(handler)) {}
 
-std::unique_ptr<Session> AgentMac::GetNextSession() {
-  return std::make_unique<SessionMac>();
-}
+void AgentMac::HandleEvents() {}
 
 }  // namespace sdk
 }  // namespace content_analysis

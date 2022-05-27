@@ -9,7 +9,8 @@
 namespace content_analysis {
 namespace sdk {
 
-AgentBase::AgentBase(Config config) : config_(std::move(config)) {}
+AgentBase::AgentBase(Config config, std::unique_ptr<AgentEventHandler> handler)
+    : config_(std::move(config)), handler_(std::move(handler)) {}
 
 const Agent::Config& AgentBase::GetConfig() const {
   return config_;
