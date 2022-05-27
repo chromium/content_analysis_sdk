@@ -71,7 +71,8 @@ class ContentAnalysisEvent {
   virtual ~ContentAnalysisEvent() = default;
 
   // Prepares the event for graceful shutdown.  Upon return calls to all
-  // other methods of this class will fail.
+  // other methods of this class will fail.  Returns 0 on success and -1
+  // on failure.
   virtual int Close() = 0;
 
   // Retrives information about the browser that generated this content
@@ -88,7 +89,8 @@ class ContentAnalysisEvent {
   virtual ContentAnalysisResponse& GetResponse() = 0;
 
   // Send the verdict to Google Chrome.  Once this method is called further
-  // changes to the response are ignored.
+  // changes to the response are ignored.  Returns 0 on success and -1
+  // on failure.
   virtual int Send() = 0;
 
  protected:
@@ -183,7 +185,7 @@ class Agent {
   virtual void HandleEvents() = 0;
 
   // Prepares the agent for graceful shutdown.  Any function blocked on
-  // HandleEvents() will return.
+  // HandleEvents() will return.  Returns 0 on success and -1 on failure.
   virtual int Stop() = 0;
 
  protected:
@@ -204,6 +206,8 @@ class Agent {
 //
 // If `tag` is not empty it will replace the result's tag.
 // If `status` is not STATUS_UNKNOWN it will will replace the result's status.
+//
+// Returns 0 on success and -1 on failure.
 int UpdateResponse(ContentAnalysisResponse& response,
                    const std::string& tag,
                    ContentAnalysisResponse::Result::Status status);
@@ -217,6 +221,8 @@ int UpdateResponse(ContentAnalysisResponse& response,
 //
 // This function assumes the event's response has already been initialized
 // using UpdateResponse().
+//
+// Returns 0 on success and -1 on failure.
 int SetEventVerdictTo(
     ContentAnalysisEvent* event,
     ContentAnalysisResponse::Result::TriggeredRule::Action action);
@@ -226,6 +232,8 @@ int SetEventVerdictTo(
 //
 //   SetEventVerdictTo(event,
 //                     ContentAnalysisResponse::Result::TriggeredRule::BLOCK);
+//
+// Returns 0 on success and -1 on failure.
 int SetEventVerdictToBlock(ContentAnalysisEvent* event);
 
 }  // namespace sdk
