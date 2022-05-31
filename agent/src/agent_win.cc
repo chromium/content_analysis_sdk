@@ -270,24 +270,34 @@ DWORD AgentWin::Connection::OnReadFile(BOOL done_reading, DWORD count) {
 }
 
 DWORD AgentWin::Connection::CallHandler() {
+  ChromeToAgent message;
+  if (!message.ParseFromArray(buffer_.data(), final_size_)) {
+    // Malformed message.
+    return ERROR_INVALID_DATA;
+  }
+
   DWORD err = ERROR_SUCCESS;
 
-  ChromeToAgent request;
-  if (request.ParseFromArray(buffer_.data(), final_size_)) {
-    if (request.has_request()) {
-      auto event = std::make_unique<ContentAnalysisEventWin>(
-          handle_, browser_info_, std::move(*request.mutable_request()));
-      if (event->Init() == ERROR_SUCCESS) {
-        handler_->OnAnalysisRequested(std::move(event));
-      } else {
-        err = ERROR_INTERNAL_ERROR;
-      }
-    } else if (request.has_ack()) {
-      handler_->OnResponseAcknowledged(request.ack());
-    } else {
-      // Malformed request.
-      err = ERROR_INVALID_DATA;
+  if (message.has_request()) {
+    // This is a request from Google Chrome to perform a content analysis
+    // request.
+    //
+    // Move the request from `message` to the event to reduce the amount
+    // of memory allocation/copying and also because the the handler takes
+    // ownership of the event.
+    auto event = std::make_unique<ContentAnalysisEventWin>(
+        handle_, browser_info_, std::move(*message.mutable_request()));
+    err = event->Init();
+    if (err == ERROR_SUCCESS) {
+      handler_->OnAnalysisRequested(std::move(event));
     }
+  } else if (message.has_ack()) {
+    // This is an ack from Google Chrome that it has received a content
+    // analysis response from the agent.
+    handler_->OnResponseAcknowledged(message.ack());
+  } else {
+    // Malformed message.
+    err = ERROR_INVALID_DATA;
   }
 
   return err;
