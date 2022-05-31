@@ -36,7 +36,7 @@ class AgentWin : public AgentBase {
     // objects cannot be copied or moved because the OVERLAPPED structure
     // cannot be changed or moved in memory while an I/O operation is in
     // progress.
-    Connection(std::string& pipename, AgentEventHandler* handler,
+    Connection(const std::string& pipename, AgentEventHandler* handler,
                bool is_first_pipe);
     Connection(const Connection& other) = delete;
     Connection(Connection&& other) = delete;
@@ -49,7 +49,7 @@ class AgentWin : public AgentBase {
     HANDLE GetWaitHandle() const { return overlapped_.hEvent; }
 
     // Resets this connection object to listen for a new Google Chrome browser.
-    DWORD Reset(std::string& pipename);
+    DWORD Reset(const std::string& pipename);
 
     // Hnadles an event for this connection.  `wait_handle` corresponds to
     // this connections wait handle.
@@ -68,7 +68,7 @@ class AgentWin : public AgentBase {
     DWORD ConnectPipe();
 
     // Resets this connection object to listen for a new Google Chrome browser.
-    DWORD ResetInternal(std::string& pipename, bool is_first_pipe);
+    DWORD ResetInternal(const std::string& pipename, bool is_first_pipe);
 
     // Cleans up this connection object so that it can be reused with a new
     // Google Chroem browser instance.  The handles assocated with this object
@@ -86,7 +86,22 @@ class AgentWin : public AgentBase {
     // Called when data from Google Chrome is available for reading from the
     // pipe. ERROR_SUCCESS and ERROR_MORE_DATA are both successful return
     // values.  Other values represent an error with the connection.
-    DWORD OnReadFile(BOOL success, DWORD count);
+    //
+    // `done_reading` is true if the code has finished reading an entire message
+    // from chrome.  Regardless of whether reading is done, `count` contains
+    // the number of bytes read.
+    //
+    // If `done_reading` is true, the data received from the browser is parsed
+    // as if it were a `ChromeToAgent` proto message and the handler is called
+    // as needed.
+    //
+    // If `done_reading` is false, the data received from the browser is
+    // appended to the data already received from the browser.  `buffer_` is
+    // resized to allow reading more data from the browser.
+    //
+    // In all cases the caller is expected to use QueueReadFile() to continue
+    // reading data from the browser.
+    DWORD OnReadFile(BOOL done_reading, DWORD count);
 
     // Calls the appropriate method the handler depending on the message
     // received from Google Chrome.

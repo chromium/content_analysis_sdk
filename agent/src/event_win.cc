@@ -17,7 +17,10 @@ static DWORD WriteMessageToPipe(HANDLE pipe, const std::string& message) {
 
   OVERLAPPED overlapped;
   memset(&overlapped, 0, sizeof(overlapped));
-  overlapped.hEvent = CreateEvent(nullptr, TRUE, FALSE, nullptr);
+  overlapped.hEvent = CreateEvent(/*securityAttr=*/nullptr,
+    /*manualReset=*/TRUE,
+    /*initialState=*/FALSE,
+    /*name=*/nullptr);
   if (overlapped.hEvent == nullptr) {
     return GetLastError();
   }
@@ -25,12 +28,12 @@ static DWORD WriteMessageToPipe(HANDLE pipe, const std::string& message) {
   DWORD err = ERROR_SUCCESS;
   const char* cursor = message.data();
   for (DWORD size = message.length(); size > 0;) {
-    if (WriteFile(pipe, cursor, size, nullptr, &overlapped)) {
+    if (WriteFile(pipe, cursor, size, /*written=*/nullptr, &overlapped)) {
       break;
     }
 
     DWORD written;
-    if (!GetOverlappedResult(pipe, &overlapped, &written, TRUE)) {
+    if (!GetOverlappedResult(pipe, &overlapped, &written, /*wait=*/TRUE)) {
       err = GetLastError();
       break;
     }
