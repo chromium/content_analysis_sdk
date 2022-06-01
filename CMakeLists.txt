@@ -69,30 +69,24 @@ if(WIN)
   set(PLATFORM_AGENT_CODE
     ./agent/src/agent_win.cc
     ./agent/src/agent_win.h
-    ./agent/src/session_win.cc
-    ./agent/src/session_win.h
+    ./agent/src/event_win.cc
+    ./agent/src/event_win.h
     ./common/utils_win.cc
     ./common/utils_win.h
-  )
-  set(PLATFORM_QUEUED_AGENT_DEMO_CODE
-    ./demo/queued_agent_win.cc
   )
 elseif(MAC)
   set(PLATFORM_AGENT_CODE
     ./agent/src/agent_mac.cc
     ./agent/src/agent_mac.h
-    ./agent/src/session_mac.cc
-    ./agent/src/session_mac.h
+    ./agent/src/event_mac.cc
+    ./agent/src/event_mac.h
   )
 elseif(LINUX)
   set(PLATFORM_AGENT_CODE
     ./agent/src/agent_posix.cc
     ./agent/src/agent_posix.h
-    ./agent/src/session_posix.cc
-    ./agent/src/session_posix.h
-  )
-  set(PLATFORM_QUEUED_AGENT_DEMO_CODE
-    ./demo/queued_agent_posix.cc
+    ./agent/src/event_posix.cc
+    ./agent/src/event_posix.h
   )
 endif()
 
@@ -145,8 +139,8 @@ add_library(cac_agent
   ./agent/include/content_analysis/sdk/analysis_agent.h
   ./agent/src/agent_base.cc
   ./agent/src/agent_base.h
-  ./agent/src/session_base.cc
-  ./agent/src/session_base.h
+  ./agent/src/event_base.cc
+  ./agent/src/event_base.h
   ${PLATFORM_AGENT_CODE}
   ${PROJECT_BINARY_DIR}/gen/content_analysis/sdk/analysis.pb.cc
 )
@@ -171,7 +165,7 @@ target_link_libraries(agent PRIVATE cac_agent)
 
 # A demo agent that queues up requests for a background thread.
 if (WIN OR LINUX)
-  add_executable(queued_agent ${PLATFORM_QUEUED_AGENT_DEMO_CODE})
+  add_executable(queued_agent ./demo/queued_agent.cc)
   target_include_directories(queued_agent PRIVATE ${AGENT_INCLUDES})
   target_link_libraries(queued_agent PRIVATE cac_agent)
 endif()
