@@ -35,7 +35,9 @@ ClientWin::ClientWin(Config config) : ClientBase(std::move(config)) {
 
 int ClientWin::Send(const ContentAnalysisRequest& request,
                     ContentAnalysisResponse* response) {
-  // TODO: avoid extra copy.
+  // TODO: could avoid a copy by changing first argument to be
+  // `ContentAnalysisRequest request` and then using std::move() below and at
+  // call site.
   ChromeToAgent chrome_to_agent;
   *chrome_to_agent.mutable_request() = request;
   bool success = WriteMessageToPipe(hPipe_,
@@ -53,7 +55,9 @@ int ClientWin::Send(const ContentAnalysisRequest& request,
 }
 
 int ClientWin::Acknowledge(const ContentAnalysisAcknowledgement& ack) {
-  // TODO: avoid extra copy.
+  // TODO: could avoid a copy by changing argument to be
+  // `ContentAnalysisAcknowledgement ack` and then using std::move() below and
+  // at call site.
   ChromeToAgent chrome_to_agent;
   *chrome_to_agent.mutable_ack() = ack;
   return WriteMessageToPipe(hPipe_, chrome_to_agent.SerializeAsString())
@@ -61,7 +65,7 @@ int ClientWin::Acknowledge(const ContentAnalysisAcknowledgement& ack) {
 }
 
 // static
-DWORD ClientWin::ConnectToPipe(std::string& pipename, HANDLE* handle) {
+DWORD ClientWin::ConnectToPipe(const std::string& pipename, HANDLE* handle) {
   HANDLE h = INVALID_HANDLE_VALUE;
   while (h == INVALID_HANDLE_VALUE) {
     h = CreateFileA(pipename.c_str(),

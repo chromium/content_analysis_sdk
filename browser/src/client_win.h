@@ -23,7 +23,7 @@ class ClientWin : public ClientBase {
   int Acknowledge(const ContentAnalysisAcknowledgement& ack) override;
 
  private:
-  static DWORD ConnectToPipe(std::string& pipename, HANDLE* handle);
+  static DWORD ConnectToPipe(const std::string& pipename, HANDLE* handle);
 
   // Reads the next message from the pipe and returns a buffer of chars.
   // Can read any length of message.
