@@ -134,6 +134,9 @@ void DumpResponse(int position, const ContentAnalysisResponse& response) {
     case ContentAnalysisResponse::Result::FAILURE:
       status_str = "Failure";
       break;
+    default:
+      status_str = "<Uknown>";
+      break;
     }
 
     auto action =

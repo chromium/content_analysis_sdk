@@ -9,6 +9,8 @@ namespace sdk {
 
 namespace testing {
 
+// TODO(rogerta): placeholer for test.
+
 TEST(HelloTest, BasicAssertions) {
   // Expect two strings not to be equal.
   EXPECT_STRNE("hello", "world");

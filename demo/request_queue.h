@@ -31,7 +31,7 @@ class RequestQueue {
     sl.WakeOne();
   }
 
-  // Pop the next request from the queue, blocking if necessary until a event
+  // Pop the next request from the queue, blocking if necessary until an event
   // is available.  Returns a nullptr if the queue will produce no more
   // events.
   std::unique_ptr<Event> pop() {
