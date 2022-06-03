@@ -50,11 +50,14 @@ message ContentMetaData {
   // Sha256 digest of file.
   optional string digest = 3;
 
+  // Specifically for the download case.
+  optional ClientDownloadRequest csd = 4;
+
   // Optional email address of user.  This field may be empty if the user
   // is not signed in.
   optional string email = 5;
 
-  reserved 4, 6;
+  reserved 6;
 }
 
 message ClientMetadata {
@@ -69,6 +72,30 @@ message ClientMetadata {
 
   reserved 2 to 3;
 };
+
+message ClientDownloadRequest {
+  // Type of the resources stored below.
+  enum ResourceType {
+    // The final URL of the download payload.  The resource URL should
+    // correspond to the URL field above.
+    DOWNLOAD_URL = 0;
+    // A redirect URL that was fetched before hitting the final DOWNLOAD_URL.
+    DOWNLOAD_REDIRECT = 1;
+    
+    reserved 2 to 5;
+  }
+
+  message Resource {
+    required string url = 1;
+    required ResourceType type = 2;
+
+    reserved 3 to 4;
+  }
+    
+  repeated Resource resources = 4;
+
+  reserved 1 to 3, 5 to 84;
+}
 
 
 // Analysis request sent from chrome to backend.
