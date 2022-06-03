@@ -20,15 +20,24 @@ class ClientWin : public ClientBase {
   // Client:
   int Send(const ContentAnalysisRequest& request,
                  ContentAnalysisResponse* response) override;
+  int Acknowledge(const ContentAnalysisAcknowledgement& ack) override;
 
  private:
-  DWORD ConnectToPipe(HANDLE* handle);
+  static DWORD ConnectToPipe(const std::string& pipename, HANDLE* handle);
+
+  // Reads the next message from the pipe and returns a buffer of chars.
+  // Can read any length of message.
+  static std::vector<char> ReadNextMessageFromPipe(HANDLE pipe);
+
+  // Writes a string to the pipe. Returns True if successful, else returns False.
+  static bool WriteMessageToPipe(HANDLE pipe, const std::string& message);
+
+  // Performs a clean shutdown of the client.
+  void Shutdown();
 
   std::string pipename_;
+  HANDLE hPipe_ = INVALID_HANDLE_VALUE;
 };
-
-std::vector<char> ReadNextMessageFromPipe(HANDLE pipe);
-bool WriteMessageToPipe(HANDLE pipe, const std::string& message);
 
 }  // namespace sdk
 }  // namespace content_analysis

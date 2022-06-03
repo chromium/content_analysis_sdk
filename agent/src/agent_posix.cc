@@ -5,21 +5,24 @@
 #include <utility>
 
 #include "agent_posix.h"
-#include "session_posix.h"
+#include "event_posix.h"
 
 namespace content_analysis {
 namespace sdk {
 
 // static
-std::unique_ptr<Agent> Agent::Create(Config config) {
-  return std::make_unique<AgentPosix>(std::move(config));
+std::unique_ptr<Agent> Agent::Create(
+    Config config,
+    std::unique_ptr<AgentEventHandler> handler) {
+  return std::make_unique<AgentPosix>(std::move(config), std::move(handler));
 }
 
-AgentPosix::AgentPosix(Config config) : AgentBase(std::move(config)) {}
+AgentPosix::AgentPosix(
+    Config config,
+    std::unique_ptr<AgentEventHandler> handler)
+  : AgentBase(std::move(config), std::move(handler)) {}
 
-std::unique_ptr<Session> AgentPosix::GetNextSession() {
-  return std::make_unique<SessionPosix>();
-}
+void AgentPosix::HandleEvents() {}
 
 }  // namespace sdk
 }  // namespace content_analysis

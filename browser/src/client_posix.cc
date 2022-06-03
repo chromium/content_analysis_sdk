@@ -21,5 +21,9 @@ int ClientPosix::Send(const ContentAnalysisRequest& request,
   return -1;
 }
 
+int ClientPosix::Acknowledge(const ContentAnalysisAcknowledgement& ack) {
+  return -1;
+}
+
 }  // namespace sdk
 }  // namespace content_analysis

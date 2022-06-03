@@ -13,9 +13,9 @@ namespace sdk {
 // Agent implementaton for linux.
 class AgentPosix : public AgentBase {
  public:
-  AgentPosix(Config config);
+  AgentPosix(Config config, std::unique_ptr<AgentEventHandler> handler);
 
-  std::unique_ptr<Session> GetNextSession() override;
+  void HandleEvents() override;
 
   // TODO(rogerta): Fill in implementation.
 };

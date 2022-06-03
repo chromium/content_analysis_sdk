@@ -8,25 +8,25 @@ option optimize_for = LITE_RUNTIME;
 
 package content_analysis.sdk;
 
-// A Handshake is sent when opening a new connection from browser to agent.
-message Handshake {
-  // Process ID of the browser initiating the session.
-  optional int32 process_id = 1;
-  // Indicates whether a content analysis is being requested in this session.
-  // If set to True, then a request will be sent by the browser after the
-  // handshake and the browser is expecting to then receive a verdict response
-  // from the agent following the request.  If set to False, the browser is 
-  // performing a startup check or an intermittent heartbeat, and no response 
-  // is expected from the agent.
-  optional bool content_analysis_requested = 2;
-}
-
 // An Acknowledgement is sent by the browser following the receipt of a response
 // from the agent.
-message Acknowledgement {
-  // Indicates whether a verdict was successfully received by the browser.
-  // This should be logged by agents, especially if it's False.
-  optional bool verdict_received = 1;
+message ContentAnalysisAcknowledgement {
+  // Token used to correlate with the corresponding request and response.
+  optional string request_token = 1;
+
+  // The action taken by google Chrome with the content analysis response.
+  enum Status {
+    // The response was handled as specified by the agent.
+    SUCCESS = 1;
+
+    // The response from the agent was not properly formatted.
+    INVALID_RESPONSE = 2;
+
+    // The response from the agent was too late and Google Chrome took the
+    // default action.
+    TOO_LATE = 3;
+  };
+  optional Status status = 2;
 }
 
 // The values in this enum can be extended in future versions of Chrome to
@@ -150,4 +150,15 @@ message ContentAnalysisResponse {
   repeated Result results = 4;
 
   reserved 2 to 3;
+}
+
+// Generic message sent from Chrome to Agent.
+message ChromeToAgent {
+  optional ContentAnalysisRequest request = 1;
+  optional ContentAnalysisAcknowledgement ack = 2;
+}
+
+// Generic message sent from Agent to Chrome.
+message AgentToChrome {
+  optional ContentAnalysisResponse response = 1;
 }

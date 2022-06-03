@@ -2,12 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "session_base.h"
+#include "event_base.h"
 
 namespace content_analysis {
 namespace sdk {
 
-int SessionBase::Close() {
+ContentAnalysisEventBase::ContentAnalysisEventBase(
+   const BrowserInfo& browser_info)
+ : browser_info_(browser_info) {}
+
+int ContentAnalysisEventBase::Close() {
   return 0;
 }
 
@@ -29,17 +33,17 @@ int UpdateResponse(ContentAnalysisResponse& response,
   return 0;
 }
 
-int SetSessionVerdictTo(
-    Session* session,
+int SetEventVerdictTo(
+    ContentAnalysisEvent* event,
     ContentAnalysisResponse::Result::TriggeredRule::Action action) {
-  // This function expects that the session's result has already been
+  // This function expects that the event's result has already been
   // initialized by a call to UpdateResponse().
 
-  if (session->GetResponse().results_size() == 0) {
+  if (event->GetResponse().results_size() == 0) {
     return -1;
   }
 
-  auto result = session->GetResponse().mutable_results(0);
+  auto result = event->GetResponse().mutable_results(0);
 
   // Content analysis responses generated with this SDK contain at most one
   // triggered rule.
@@ -52,8 +56,8 @@ int SetSessionVerdictTo(
   return 0;
 }
 
-int SetSessionVerdictToBlock(Session* session) {
-  return SetSessionVerdictTo(session,
+int SetEventVerdictToBlock(ContentAnalysisEvent* event) {
+  return SetEventVerdictTo(event,
       ContentAnalysisResponse::Result::TriggeredRule::BLOCK);
 }
 
