@@ -42,9 +42,9 @@ TEST(EventTest, Create_Request) {
   ASSERT_TRUE(event);
 
   ASSERT_EQ(1u, event->GetRequest().tags_size());
-  ASSERT_EQ("foo", event->GetRequest().tags(0));
+  ASSERT_EQ(request.tags(0), event->GetRequest().tags(0));
   ASSERT_TRUE(event->GetRequest().has_request_token());
-  ASSERT_EQ("req-token", event->GetRequest().request_token());
+  ASSERT_EQ(request.request_token(), event->GetRequest().request_token());
 }
 
 TEST(EventTest, Create_Init) {
@@ -65,7 +65,7 @@ TEST(EventTest, Create_Init) {
   ASSERT_EQ(ContentAnalysisResponse::Result::SUCCESS,
             event->GetResponse().results(0).status());
   ASSERT_TRUE(event->GetResponse().results(0).has_tag());
-  ASSERT_EQ("foo", event->GetResponse().results(0).tag());
+  ASSERT_EQ(request.tags(0), event->GetResponse().results(0).tag());
   ASSERT_EQ(0u, event->GetResponse().results(0).triggered_rules_size());
 }
 
