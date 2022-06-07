@@ -60,7 +60,7 @@ class AgentWin : public AgentBase {
     // successful ERROR_SUCCESS is returned and `handle` is set to the pipe's
     // server endpoint handle.  Otherwise an error code is returned and `handle`
     // is set to INVALID_HANDLE_VALUE.
-    DWORD CreatePipe(const std::string& name,
+    static DWORD CreatePipe(const std::string& name,
                      bool is_first_pipe,
                      HANDLE* handle);
 

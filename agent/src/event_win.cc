@@ -61,6 +61,8 @@ ContentAnalysisEventWin::~ContentAnalysisEventWin() {
 }
 
 DWORD ContentAnalysisEventWin::Init() {
+  response()->set_request_token(request()->request_token());
+
   // Prepare the response so that ALLOW verdicts are the default().
   UpdateResponse(*response(),
       request()->tags_size() > 0 ? request()->tags(0) : std::string(),

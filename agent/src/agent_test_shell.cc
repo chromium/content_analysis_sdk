@@ -6,7 +6,6 @@
 
 namespace content_analysis {
 namespace sdk {
-
 namespace testing {
 
 // TODO(rogerta): placeholer for test.
@@ -19,6 +18,6 @@ TEST(HelloTest, BasicAssertions) {
 }
 
 }  // namespace testing
-
 }  // namespace sdk
 }  // namespace content_analysis
+
