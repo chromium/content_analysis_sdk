@@ -15,7 +15,8 @@ namespace testing {
 std::unique_ptr<ContentAnalysisEventWin> CreateEvent(
     const BrowserInfo& browser_info,
     ContentAnalysisRequest request) {
-  return std::make_unique<ContentAnalysisEventWin>(INVALID_HANDLE_VALUE, browser_info, request);
+  return std::make_unique<ContentAnalysisEventWin>(
+      INVALID_HANDLE_VALUE, browser_info, request);
 }
 
 TEST(EventTest, Create_BrowserInfo) {

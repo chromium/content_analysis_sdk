@@ -118,8 +118,6 @@ DWORD AgentWin::Connection::HandleEvent(HANDLE handle) {
   return err;
 }
 
-
-// static
 DWORD AgentWin::Connection::CreatePipe(
     const std::string& name,
     bool is_first_pipe,
