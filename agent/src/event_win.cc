@@ -47,12 +47,12 @@ static DWORD WriteMessageToPipe(HANDLE pipe, const std::string& message) {
 }
 
 
-ContentAnalysisEventWin::ContentAnalysisEventWin(HANDLE handle,
-                                                 const BrowserInfo& browser_info,
-                                                 ContentAnalysisRequest req)
+ContentAnalysisEventWin::ContentAnalysisEventWin(
+    HANDLE handle,
+    const BrowserInfo& browser_info,
+    ContentAnalysisRequest req)
     : ContentAnalysisEventBase(browser_info),
       hPipe_(handle) {
-  // TODO(rogerta): do some basic validation of the request.
   *request() = std::move(req);
 }
 
@@ -61,6 +61,11 @@ ContentAnalysisEventWin::~ContentAnalysisEventWin() {
 }
 
 DWORD ContentAnalysisEventWin::Init() {
+  // TODO(rogerta): do some extra validation of the request?
+  if (request()->request_token().empty()) {
+    return ERROR_INVALID_DATA;
+  }
+
   response()->set_request_token(request()->request_token());
 
   // Prepare the response so that ALLOW verdicts are the default().

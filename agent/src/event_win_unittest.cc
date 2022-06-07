@@ -16,7 +16,7 @@ std::unique_ptr<ContentAnalysisEventWin> CreateEvent(
     const BrowserInfo& browser_info,
     ContentAnalysisRequest request) {
   return std::make_unique<ContentAnalysisEventWin>(
-      INVALID_HANDLE_VALUE, browser_info, request);
+      INVALID_HANDLE_VALUE, browser_info, std::move(request));
 }
 
 TEST(EventTest, Create_BrowserInfo) {
@@ -67,6 +67,18 @@ TEST(EventTest, Create_Init) {
   ASSERT_TRUE(event->GetResponse().results(0).has_tag());
   ASSERT_EQ(request.tags(0), event->GetResponse().results(0).tag());
   ASSERT_EQ(0u, event->GetResponse().results(0).triggered_rules_size());
+}
+
+// Initializing an event whose request has no request token is an error.
+TEST(EventTest, Create_Init_RequestNoRequestToken) {
+  const BrowserInfo bi{ 12345, "/path/to/binary" };
+  ContentAnalysisRequest request;
+  *request.add_tags() = "foo";
+
+  auto event = CreateEvent(bi, request);
+  ASSERT_TRUE(event);
+
+  ASSERT_EQ(ERROR_INVALID_DATA, event->Init());
 }
 
 }  // namespace testing

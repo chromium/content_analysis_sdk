@@ -85,6 +85,7 @@ elseif(MAC)
     ./agent/src/event_mac.h
   )
   set(PLATFORM_TEST_CODE
+    ./agent/src/event_mac_unittest.cc
   )
 elseif(LINUX)
   set(PLATFORM_AGENT_CODE
@@ -94,6 +95,7 @@ elseif(LINUX)
     ./agent/src/event_posix.h
   )
   set(PLATFORM_TEST_CODE
+    ./agent/src/event_posix_unittest.cc
   )
 endif()
 
