@@ -9,7 +9,7 @@ namespace sdk {
 
   ContentAnalysisEventPosix::ContentAnalysisEventPosix(
     const BrowserInfo& browser_info,
-    ContentAnalysisRequest request)
+    ContentAnalysisRequest req)
     : ContentAnalysisEventBase(browser_info) {
   *request() = std::move(req);
 }
