@@ -13,7 +13,8 @@ namespace sdk {
 // ContentAnalysisEvent implementaton for macOS.
 class ContentAnalysisEventMac : public ContentAnalysisEventBase {
  public:
-  ContentAnalysisEventMac() = default;
+  ContentAnalysisEventMac(const BrowserInfo& browser_info,
+                          ContentAnalysisRequest request);
 
   // ContentAnalysisEvent:
   int Send() override;

@@ -13,7 +13,8 @@ namespace sdk {
 // ContentAnalysisEvent implementaton for linux.
 class ContentAnalysisEventPosix : public ContentAnalysisEventBase {
  public:
-  ContentAnalysisEventPosix() = default;
+   ContentAnalysisEventPosix(const BrowserInfo& browser_info,
+                             ContentAnalysisRequest request);
 
   // ContentAnalysisEvent:
   int Send() override;

@@ -74,6 +74,9 @@ if(WIN)
     ./common/utils_win.cc
     ./common/utils_win.h
   )
+  set(PLATFORM_TEST_CODE
+    ./agent/src/event_win_unittest.cc
+  )
 elseif(MAC)
   set(PLATFORM_AGENT_CODE
     ./agent/src/agent_mac.cc
@@ -81,12 +84,18 @@ elseif(MAC)
     ./agent/src/event_mac.cc
     ./agent/src/event_mac.h
   )
+  set(PLATFORM_TEST_CODE
+    ./agent/src/event_mac_unittest.cc
+  )
 elseif(LINUX)
   set(PLATFORM_AGENT_CODE
     ./agent/src/agent_posix.cc
     ./agent/src/agent_posix.h
     ./agent/src/event_posix.cc
     ./agent/src/event_posix.h
+  )
+  set(PLATFORM_TEST_CODE
+    ./agent/src/event_posix_unittest.cc
   )
 endif()
 
@@ -121,16 +130,18 @@ find_package(GTest CONFIG REQUIRED)
 include(GoogleTest)
 
 add_executable(
-  agent_test_shell
-  ../agent/src/agent_test_shell.cc
+  unit_tests
+  ${PLATFORM_TEST_CODE}
 )
+target_include_directories(unit_tests PRIVATE ${AGENT_INCLUDES})
 target_link_libraries(
-  agent_test_shell
+  unit_tests
   PUBLIC 
+  cac_agent
   GTest::gtest GTest::gtest_main
 )
 
-gtest_discover_tests(agent_test_shell) 
+gtest_discover_tests(unit_tests) 
 
 # Builds the content analysis connector agent linker library.  This library is linked
 # into the agent in order to listen for and process content analysis requests

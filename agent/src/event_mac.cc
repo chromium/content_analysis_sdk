@@ -7,6 +7,13 @@
 namespace content_analysis {
 namespace sdk {
 
+ContentAnalysisEventMac::ContentAnalysisEventMac(
+    const BrowserInfo& browser_info,
+    ContentAnalysisRequest req)
+    : ContentAnalysisEventBase(browser_info) {
+  *request() = std::move(req);
+}
+
 int ContentAnalysisEventMac::Send() {
   return -1;
 }
