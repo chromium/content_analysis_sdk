@@ -81,6 +81,12 @@ int ContentAnalysisEventWin::Close() {
 }
 
 int ContentAnalysisEventWin::Send() {
+  if (response_sent_) {
+    return -1;
+  }
+
+  response_sent_ = true;
+
   DWORD err = WriteMessageToPipe(hPipe_,
                                  agent_to_chrome()->SerializeAsString());
   return err == ERROR_SUCCESS ? 0 : -1;
@@ -88,6 +94,13 @@ int ContentAnalysisEventWin::Send() {
 
 void ContentAnalysisEventWin::Shutdown() {
   if (hPipe_ != INVALID_HANDLE_VALUE) {
+    // If no response has been sent yet, attempt to send it now.  Otherwise
+    // the client may be stuck waiting.  After shutdown the agent will not
+    // have any other chance to respond.
+    if (!response_sent_) {
+      Send();
+    }
+
     // This event does not own the pipe, so don't close it.
     FlushFileBuffers(hPipe_);
     hPipe_ = INVALID_HANDLE_VALUE;

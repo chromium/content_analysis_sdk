@@ -5,7 +5,6 @@
 #include <memory>
 
 #include "agent/src/event_win.h"
-#include "content_analysis/sdk/analysis_agent.h"
 #include "gtest/gtest.h"
 
 namespace content_analysis {

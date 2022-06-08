@@ -15,7 +15,8 @@ namespace sdk {
 // Client implementaton for Windows.
 class ClientWin : public ClientBase {
  public:
-  ClientWin(Config config);
+   ClientWin(Config config);
+   ~ClientWin() override;
 
   // Client:
   int Send(const ContentAnalysisRequest& request,

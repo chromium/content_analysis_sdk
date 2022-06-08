@@ -33,6 +33,10 @@ ClientWin::ClientWin(Config config) : ClientBase(std::move(config)) {
   }
 }
 
+ClientWin::~ClientWin() {
+  Shutdown();
+}
+
 int ClientWin::Send(const ContentAnalysisRequest& request,
                     ContentAnalysisResponse* response) {
   // TODO: could avoid a copy by changing first argument to be

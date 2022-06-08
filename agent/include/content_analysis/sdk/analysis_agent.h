@@ -186,6 +186,7 @@ class Agent {
 
   // Prepares the agent for graceful shutdown.  Any function blocked on
   // HandleEvents() will return.  Returns 0 on success and -1 on failure.
+  // It is safe to call this method from any thread.
   virtual int Stop() = 0;
 
  protected:
