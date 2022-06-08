@@ -75,6 +75,7 @@ if(WIN)
     ./common/utils_win.h
   )
   set(PLATFORM_TEST_CODE
+    ./agent/src/agent_win_unittest.cc
     ./agent/src/event_win_unittest.cc
   )
 elseif(MAC)
@@ -133,11 +134,16 @@ add_executable(
   unit_tests
   ${PLATFORM_TEST_CODE}
 )
-target_include_directories(unit_tests PRIVATE ${AGENT_INCLUDES})
+target_include_directories(
+  unit_tests PRIVATE
+  ${AGENT_INCLUDES}
+  ${BROWSER_INCLUDES}
+)
 target_link_libraries(
   unit_tests
   PUBLIC 
   cac_agent
+  cac_browser
   GTest::gtest GTest::gtest_main
 )
 

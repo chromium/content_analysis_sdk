@@ -26,7 +26,10 @@ class AgentWin : public AgentBase {
   void HandleEvents() override;
   int Stop() override;
 
- private:
+  // Handles one pipe event and returns.  Used only in tests.
+  DWORD HandleOneEventForTesting();
+
+private:
   // Represents one connection to a Google Chrome browser, or one pipe
   // listening for a Google Chrome browser to connect.
   class Connection {
@@ -132,9 +135,16 @@ class AgentWin : public AgentBase {
     DWORD final_size_ = 0;
   };
 
-  // Returns handles that can be used to wait for events from all Connection
-  // objects managed by this agent.
+  // Returns handles that can be used to wait for events from all handles
+  // managed by this agent.  This includes all connection objects and the
+  // stop event.  The stop event is always last in the list.
   void GetHandles(std::vector<HANDLE>& wait_handles) const;
+
+  // Handles one pipe event and returns.  If the return value is
+  // ERROR_SUCCESS, the `stopped` argument is set to true if the agent
+  // should stop handling more events.  If the return value is not
+  // ERROR_SUCCESS, `stopped` is undefined.
+  DWORD HandleOneEvent(std::vector<HANDLE>& wait_handles, bool* stopped);
 
   // Performs a clean shutdown of the agent.
   void Shutdown();
@@ -146,6 +156,9 @@ class AgentWin : public AgentBase {
   // The first kNumPipeInstances pipes in the list correspond to listening
   // pipes.
   std::vector<std::unique_ptr<Connection>> connections_;
+
+  // An event that is set when the agent should stop.  Set in Stop().
+  HANDLE stop_event_ = nullptr;
 };
 
 }  // namespace sdk

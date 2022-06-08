@@ -33,6 +33,9 @@ class ContentAnalysisEventWin : public ContentAnalysisEventBase {
 
   // This handle is not owned by the event.
   HANDLE hPipe_ = INVALID_HANDLE_VALUE;
+
+  // Set to true when Send() is called the first time.
+  bool response_sent_ = false;
 };
 
 }  // namespace sdk

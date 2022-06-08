@@ -21,6 +21,10 @@ namespace sdk {
 // at the same time.
 const DWORD kMinNumListeningPipeInstances = 2;
 
+// The minimum number of handles to wait on.  This is the minimum number
+// of pipes in listening mode plus the stop event.
+const DWORD kMinNumWaitHandles = kMinNumListeningPipeInstances + 1;
+
 // The default size of the buffer used to hold messages received from
 // Google Chrome.
 const DWORD kBufferSize = 4096;
@@ -332,8 +336,17 @@ AgentWin::AgentWin(
     Config config,
     std::unique_ptr<AgentEventHandler> event_handler)
   : AgentBase(std::move(config), std::move(event_handler)) {
-  if (handler() == nullptr)
+  if (handler() == nullptr) {
     return;
+  }
+
+  stop_event_ = CreateEvent(/*securityAttr=*/nullptr,
+                            /*manualReset=*/TRUE,
+                            /*initialState=*/FALSE,
+                            /*name=*/nullptr);
+  if (stop_event_ == nullptr) {
+    return;
+  }
 
   std::string pipename =
       internal::GetPipeName(configuration().name,
@@ -360,55 +373,24 @@ AgentWin::~AgentWin() {
 
 void AgentWin::HandleEvents() {
   std::vector<HANDLE> wait_handles;
-  while (true) {
-    // Wait on any pipe event to happen.
-
-    GetHandles(wait_handles);
-    if (wait_handles.size() < kMinNumListeningPipeInstances) {
-      break;
-    }
-
-    DWORD index = WaitForMultipleObjects(
-        wait_handles.size(), wait_handles.data(),
-        /*waitAll=*/FALSE, /*timeoutMs=*/INFINITE);
-    if (index == WAIT_FAILED) {
-      DWORD err = GetLastError();
-      break;
-    }
-
-    index -= WAIT_OBJECT_0;
-    auto& connection = connections_[index];
-    bool was_listening = !connection->IsConnected();
-    DWORD err = connection->HandleEvent(wait_handles[index]);
-    if (err != ERROR_SUCCESS) {
-      // If `connection` was not listening and there are more than
-      // kNumPipeInstances pipes, delete this connection.  Otherwise
-      // reset it so that it becomes a listener.
-      if (!was_listening &&
-          connections_.size() > kMinNumListeningPipeInstances) {
-        connections_.erase(connections_.begin() + index);
-      } else {
-        err = connection->Reset(pipename_);
-      }
-    }
-
-    // If `connection` was listening and is now connected, create a new
-    // one so that there are always kNumPipeInstances listening.
-    if (err == ERROR_SUCCESS && was_listening && connection->IsConnected()) {
-      connections_.emplace_back(
-          std::make_unique<Connection>(pipename_, handler(), false));
-    }
+  DWORD err = ERROR_SUCCESS;
+  bool stopped = false;
+  while (!stopped && err == ERROR_SUCCESS) {
+    err = HandleOneEvent(wait_handles, &stopped);
   }
 }
 
 int AgentWin::Stop() {
-  Shutdown();
+  SetEvent(stop_event_);
   return AgentBase::Stop();
 }
 
 void AgentWin::GetHandles(std::vector<HANDLE>& wait_handles) const {
+  // Reserve enough space in the handles vector to include the stop event plus
+  // all connections.
   wait_handles.clear();
-  wait_handles.reserve(connections_.size());
+  wait_handles.reserve(1 + connections_.size());
+
   for (auto& state : connections_) {
     HANDLE wait_handle = state->GetWaitHandle();
     if (!wait_handle) {
@@ -417,11 +399,74 @@ void AgentWin::GetHandles(std::vector<HANDLE>& wait_handles) const {
     }
     wait_handles.push_back(wait_handle);
   }
+
+  // Push the stop event last so that connections_ index calculations in
+  // HandleOneEvent() don't have to account for this handle.
+  wait_handles.push_back(stop_event_);
+}
+
+DWORD AgentWin::HandleOneEventForTesting() {
+  std::vector<HANDLE> wait_handles;
+  bool stopped;
+  return HandleOneEvent(wait_handles, &stopped);
+}
+
+DWORD AgentWin::HandleOneEvent(std::vector<HANDLE>& wait_handles, bool* stopped) {
+  *stopped = false;
+
+  // Wait on the specified handles for an event to occur.
+  GetHandles(wait_handles);
+  if (wait_handles.size() < kMinNumWaitHandles) {
+    return ERROR_INVALID_HANDLE;
+  }
+
+  DWORD index = WaitForMultipleObjects(
+      wait_handles.size(), wait_handles.data(),
+      /*waitAll=*/FALSE, /*timeoutMs=*/INFINITE);
+  if (index == WAIT_FAILED) {
+    return GetLastError();
+  }
+
+  // If the index of signaled handle is the last one in wait_handles, then the
+  // stop event was signaled.
+  index -= WAIT_OBJECT_0;
+  if (index == wait_handles.size() - 1) {
+    *stopped = true;
+    return ERROR_SUCCESS;
+  }
+
+  auto& connection = connections_[index];
+  bool was_listening = !connection->IsConnected();
+  DWORD err = connection->HandleEvent(wait_handles[index]);
+  if (err != ERROR_SUCCESS) {
+    // If `connection` was not listening and there are more than
+    // kNumPipeInstances pipes, delete this connection.  Otherwise
+    // reset it so that it becomes a listener.
+    if (!was_listening &&
+      connections_.size() > kMinNumListeningPipeInstances) {
+      connections_.erase(connections_.begin() + index);
+    } else {
+      err = connection->Reset(pipename_);
+    }
+  }
+
+  // If `connection` was listening and is now connected, create a new
+  // one so that there are always kNumPipeInstances listening.
+  if (err == ERROR_SUCCESS && was_listening && connection->IsConnected()) {
+    connections_.emplace_back(
+        std::make_unique<Connection>(pipename_, handler(), false));
+  }
+
+  return ERROR_SUCCESS;
 }
 
 void AgentWin::Shutdown() {
   connections_.clear();
   pipename_.clear();
+  if (stop_event_ != nullptr) {
+    CloseHandle(stop_event_);
+    stop_event_ = nullptr;
+  }
 }
 
 }  // namespace sdk
