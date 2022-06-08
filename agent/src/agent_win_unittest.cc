@@ -14,6 +14,9 @@ namespace content_analysis {
 namespace sdk {
 namespace testing {
 
+// A handler that counts the number of times the callback methods are invoked.
+// Also remembers the last BrowserInfo structure passed to it from any of the
+// callbacks.
 struct TestHandler : public AgentEventHandler {
   void OnBrowserConnected(const BrowserInfo& info) override {
     last_info_ = info;
@@ -41,6 +44,7 @@ struct TestHandler : public AgentEventHandler {
   BrowserInfo last_info_;
 };
 
+// A test handler that closes its event before sending the response.
 struct CloseEventTestHandler : public TestHandler {
   void OnAnalysisRequested(
     std::unique_ptr<ContentAnalysisEvent> event) override {
@@ -55,6 +59,7 @@ struct CloseEventTestHandler : public TestHandler {
   }
 };
 
+// A test handler that attempts to send two responses for a given request.
 struct DoubleSendTestHandler : public TestHandler {
   void OnAnalysisRequested(
       std::unique_ptr<ContentAnalysisEvent> event) override {
@@ -81,6 +86,14 @@ std::unique_ptr<AgentWin> CreateAgent(
 std::unique_ptr<ClientWin> CreateClient(
   Client::Config config) {
   return std::make_unique<ClientWin>(std::move(config));
+}
+
+ContentAnalysisRequest BuildRequest(std::string content=std::string()) {
+  ContentAnalysisRequest request;
+  request.set_request_token("req-token");
+  *request.add_tags() = "dlp";
+  request.set_text_content(content);  // Moved.
+  return request;
 }
 
 TEST(AgentTest, Create) {
@@ -162,7 +175,6 @@ TEST(AgentTest, ConnectAndClose) {
 }
 
 TEST(AgentTest, Request) {
-  // Create an agent and client that connects to it.
   TestHandler* handler_ptr;
   auto agent = CreateAgent({"test", false}, &handler_ptr);
   ASSERT_TRUE(agent);
@@ -176,10 +188,41 @@ TEST(AgentTest, Request) {
     ASSERT_TRUE(client);
 
     // Send a request and wait for a response.
-    ContentAnalysisRequest request;
+    ContentAnalysisRequest request = BuildRequest();
     ContentAnalysisResponse response;
-    request.set_request_token("req-token");
-    *request.add_tags() = "dlp";
+    int ret = client->Send(request, &response);
+    ASSERT_EQ(0, ret);
+    ASSERT_EQ(request.request_token(), response.request_token());
+
+    done = true;
+  });
+
+  while (!done) {
+    agent->HandleOneEventForTesting();
+  }
+  ASSERT_EQ(1, handler_ptr->request_count_);
+
+  client_thread.join();
+}
+
+TEST(AgentTest, Request_Large) {
+  TestHandler* handler_ptr;
+  auto agent = CreateAgent({"test", false}, &handler_ptr);
+  ASSERT_TRUE(agent);
+
+  bool done = false;
+
+  // Create a thread to handle the client.  Since the client is sync, it can't
+  // run in the same thread as the agent.
+  std::thread client_thread([&done]() {
+    auto client = CreateClient({"test", false});
+    ASSERT_TRUE(client);
+
+    // Send a request and wait for a response.  Create a large string, which
+    // means larger than the initial mesasge buffer size specified when
+    // creating the pipes (4096 bytes).
+    ContentAnalysisRequest request = BuildRequest(std::string(5000, 'a'));
+    ContentAnalysisResponse response;
     int ret = client->Send(request, &response);
     ASSERT_EQ(0, ret);
     ASSERT_EQ(request.request_token(), response.request_token());
@@ -211,10 +254,8 @@ TEST(AgentTest, Request_DoubleSend) {
     ASSERT_TRUE(client);
 
     // Send a request and wait for a response.
-    ContentAnalysisRequest request;
+    ContentAnalysisRequest request = BuildRequest();
     ContentAnalysisResponse response;
-    request.set_request_token("req-token");
-    *request.add_tags() = "dlp";
     int ret = client->Send(request, &response);
     ASSERT_EQ(0, ret);
     ASSERT_EQ(request.request_token(), response.request_token());
@@ -246,10 +287,8 @@ TEST(AgentTest, Request_CloseEvent) {
     ASSERT_TRUE(client);
 
     // Send a request and wait for a response.
-    ContentAnalysisRequest request;
+    ContentAnalysisRequest request = BuildRequest();
     ContentAnalysisResponse response;
-    request.set_request_token("req-token");
-    *request.add_tags() = "dlp";
     int ret = client->Send(request, &response);
     ASSERT_EQ(0, ret);
     ASSERT_EQ(request.request_token(), response.request_token());
@@ -266,7 +305,6 @@ TEST(AgentTest, Request_CloseEvent) {
 }
 
 TEST(AgentTest, Ack) {
-  // Create an agent and client that connects to it.
   TestHandler* handler_ptr;
   auto agent = CreateAgent({ "test", false }, &handler_ptr);
   ASSERT_TRUE(agent);
@@ -280,10 +318,8 @@ TEST(AgentTest, Ack) {
     ASSERT_TRUE(client);
 
     // Send a request and wait for a response.
-    ContentAnalysisRequest request;
+    ContentAnalysisRequest request = BuildRequest();
     ContentAnalysisResponse response;
-    request.set_request_token("req-token");
-    *request.add_tags() = "dlp";
     int ret = client->Send(request, &response);
     ASSERT_EQ(0, ret);
 

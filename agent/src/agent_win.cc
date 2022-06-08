@@ -421,14 +421,14 @@ DWORD AgentWin::HandleOneEvent(std::vector<HANDLE>& wait_handles, bool* stopped)
   }
 
   DWORD index = WaitForMultipleObjects(
-    wait_handles.size(), wait_handles.data(),
-    /*waitAll=*/FALSE, /*timeoutMs=*/INFINITE);
+      wait_handles.size(), wait_handles.data(),
+      /*waitAll=*/FALSE, /*timeoutMs=*/INFINITE);
   if (index == WAIT_FAILED) {
     return GetLastError();
   }
 
-  // If the index if signaled handle is beyond the end of the connections_
-  // vector, then the stop event was signaled.
+  // If the index of signaled handle is the last one in wait_handles, then the
+  // stop event was signaled.
   index -= WAIT_OBJECT_0;
   if (index == wait_handles.size() - 1) {
     *stopped = true;
@@ -454,7 +454,7 @@ DWORD AgentWin::HandleOneEvent(std::vector<HANDLE>& wait_handles, bool* stopped)
   // one so that there are always kNumPipeInstances listening.
   if (err == ERROR_SUCCESS && was_listening && connection->IsConnected()) {
     connections_.emplace_back(
-      std::make_unique<Connection>(pipename_, handler(), false));
+        std::make_unique<Connection>(pipename_, handler(), false));
   }
 
   return ERROR_SUCCESS;
