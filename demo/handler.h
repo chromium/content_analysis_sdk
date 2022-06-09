@@ -65,7 +65,7 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
     std::cout << std::endl;
 
     // Send the response back to Google Chrome.
-    if (event->Send() != 0) {
+    if (event->Send() != content_analysis::sdk::ResultCode::OK) {
       std::cout << "[Demo] Error sending response" << std::endl;
     }
   }

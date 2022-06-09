@@ -19,15 +19,19 @@ namespace sdk {
 // Agent implementaton for Windows.
 class AgentWin : public AgentBase {
  public:
-  AgentWin(Config config, std::unique_ptr<AgentEventHandler> handler);
+  // Creates a new agent given the specific configuration and handler.
+  // If an error occurs during creation, `rc` is set to the specific
+  // error.  Otherwise `rc` is ResultCode::OK.
+  AgentWin(Config config, std::unique_ptr<AgentEventHandler> handler,
+           ResultCode* rc);
   ~AgentWin() override;
 
   // Agent:
-  void HandleEvents() override;
-  int Stop() override;
+  ResultCode HandleEvents() override;
+  ResultCode Stop() override;
 
   // Handles one pipe event and returns.  Used only in tests.
-  DWORD HandleOneEventForTesting();
+  ResultCode HandleOneEventForTesting();
 
   // Returns true if there is at least one client connected to this agent.
   bool IsAClientConnectedForTesting();
@@ -38,12 +42,17 @@ private:
   class Connection {
    public:
     // Starts listening on a pipe with the given name. `is_first_pipe` should
-    // be true only for the first pipe created by the agent.  `Connection`
-    // objects cannot be copied or moved because the OVERLAPPED structure
-    // cannot be changed or moved in memory while an I/O operation is in
-    // progress.
-    Connection(const std::string& pipename, AgentEventHandler* handler,
-               bool is_first_pipe);
+    // be true only for the first pipe created by the agent.  If an error
+    // occurs while creating the connction object it is returned in `rc`.
+    // If no errors occur then rc is set to ResultCode::OK.
+    //
+    // `Connection` objects cannot be copied or moved because the OVERLAPPED
+    // structure cannot be changed or moved in memory while an I/O operation
+    // is in progress.
+    Connection(const std::string& pipename,
+               AgentEventHandler* handler,
+               bool is_first_pipe,
+               ResultCode* rc);
     Connection(const Connection& other) = delete;
     Connection(Connection&& other) = delete;
     Connection& operator=(const Connection& other) = delete;
@@ -55,18 +64,18 @@ private:
     HANDLE GetWaitHandle() const { return overlapped_.hEvent; }
 
     // Resets this connection object to listen for a new Google Chrome browser.
-    DWORD Reset(const std::string& pipename);
+    ResultCode Reset(const std::string& pipename);
 
     // Hnadles an event for this connection.  `wait_handle` corresponds to
     // this connections wait handle.
-    DWORD HandleEvent(HANDLE wait_handle);
+    ResultCode HandleEvent(HANDLE wait_handle);
 
    private:
     // Listens for a new connection from Google Chrome.
-    DWORD ConnectPipe();
+    ResultCode ConnectPipe();
 
     // Resets this connection object to listen for a new Google Chrome browser.
-    DWORD ResetInternal(const std::string& pipename, bool is_first_pipe);
+    ResultCode ResetInternal(const std::string& pipename, bool is_first_pipe);
 
     // Cleans up this connection object so that it can be reused with a new
     // Google Chroem browser instance.  The handles assocated with this object
@@ -79,7 +88,7 @@ private:
     // return values. Other values represent an error with the connection.
     // If `reset_cursor` is true the internal read buffer cursor is reset to
     // the start of the buffer, otherwise it is unchanged.
-    DWORD QueueReadFile(bool reset_cursor);
+    ResultCode QueueReadFile(bool reset_cursor);
 
     // Called when data from Google Chrome is available for reading from the
     // pipe. ERROR_SUCCESS and ERROR_MORE_DATA are both successful return
@@ -99,15 +108,15 @@ private:
     //
     // In all cases the caller is expected to use QueueReadFile() to continue
     // reading data from the browser.
-    DWORD OnReadFile(BOOL done_reading, DWORD count);
+    ResultCode OnReadFile(BOOL done_reading, DWORD count);
 
     // Calls the appropriate method the handler depending on the message
     // received from Google Chrome.
-    DWORD CallHandler();
+    ResultCode CallHandler();
 
     // Fills in the browser_info_ member of this Connection.  Assumes
     // IsConnected() is true.
-    DWORD BuildBrowserInfo();
+    ResultCode BuildBrowserInfo();
 
     // The handler to call for various agent events.
     AgentEventHandler* handler_ = nullptr;
@@ -136,10 +145,10 @@ private:
   void GetHandles(std::vector<HANDLE>& wait_handles) const;
 
   // Handles one pipe event and returns.  If the return value is
-  // ERROR_SUCCESS, the `stopped` argument is set to true if the agent
+  // ResultCode::OK, the `stopped` argument is set to true if the agent
   // should stop handling more events.  If the return value is not
-  // ERROR_SUCCESS, `stopped` is undefined.
-  DWORD HandleOneEvent(std::vector<HANDLE>& wait_handles, bool* stopped);
+  // ResultCode::OK, `stopped` is undefined.
+  ResultCode HandleOneEvent(std::vector<HANDLE>& wait_handles, bool* stopped);
 
   // Performs a clean shutdown of the agent.
   void Shutdown();

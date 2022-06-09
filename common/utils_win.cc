@@ -62,8 +62,12 @@ DWORD CreatePipe(
     bool is_first_pipe,
     HANDLE* handle) {
   DWORD err = ERROR_SUCCESS;
-
   DWORD mode = PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED;
+
+  // When `is_first_pipe` ia true, the agent expects there is no process that
+  // is currently listening on this pipe.  If there is, CreateNamedPipeA()
+  // returns with ERROR_ACCESS_DENIED.  This is used to detect if another
+  // process is listening for connections when there shouldn't be.
   if (is_first_pipe) {
     mode |= FILE_FLAG_FIRST_PIPE_INSTANCE;
   }

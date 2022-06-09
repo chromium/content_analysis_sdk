@@ -9,6 +9,7 @@
 #include <string>
 
 #include "content_analysis/sdk/analysis.pb.h"
+#include "content_analysis/sdk/result_codes.h"
 
 // This is the main include file for code using Content Analysis Connector
 // Agent SDK.  No other include is needed.
@@ -71,9 +72,8 @@ class ContentAnalysisEvent {
   virtual ~ContentAnalysisEvent() = default;
 
   // Prepares the event for graceful shutdown.  Upon return calls to all
-  // other methods of this class will fail.  Returns 0 on success and -1
-  // on failure.
-  virtual int Close() = 0;
+  // other methods of this class will fail.
+  virtual ResultCode Close() = 0;
 
   // Retrives information about the browser that generated this content
   // analysis event.
@@ -89,9 +89,8 @@ class ContentAnalysisEvent {
   virtual ContentAnalysisResponse& GetResponse() = 0;
 
   // Send the verdict to Google Chrome.  Once this method is called further
-  // changes to the response are ignored.  Returns 0 on success and -1
-  // on failure.
-  virtual int Send() = 0;
+  // changes to the response are ignored.
+  virtual ResultCode Send() = 0;
 
  protected:
   ContentAnalysisEvent() = default;
@@ -170,9 +169,13 @@ class Agent {
     bool user_specific = false;
   };
 
-  // Returns a new agent instance and calls Start().
+  // Creates a new agent instance.  If successful, an agent is returned.
+  // Otherwise a nullptr is returned and `rc` contains the reason for the
+  // failure.
   static std::unique_ptr<Agent> Create(
-      Config config, std::unique_ptr<AgentEventHandler> handler);
+      Config config,
+      std::unique_ptr<AgentEventHandler> handler,
+      ResultCode* rc);
 
   virtual ~Agent() = default;
 
@@ -182,12 +185,12 @@ class Agent {
   // Handles events triggered on this agent and calls the coresponding
   // callbacks in the AgentEventHandler.  This method is blocking and returns
   // when Stop() is called or if an error occurs.
-  virtual void HandleEvents() = 0;
+  virtual ResultCode HandleEvents() = 0;
 
   // Prepares the agent for graceful shutdown.  Any function blocked on
-  // HandleEvents() will return.  Returns 0 on success and -1 on failure.
-  // It is safe to call this method from any thread.
-  virtual int Stop() = 0;
+  // HandleEvents() will return.  It is safe to call this method from any
+  // thread.
+  virtual ResultCode Stop() = 0;
 
  protected:
   Agent() = default;
@@ -207,11 +210,9 @@ class Agent {
 //
 // If `tag` is not empty it will replace the result's tag.
 // If `status` is not STATUS_UNKNOWN it will will replace the result's status.
-//
-// Returns 0 on success and -1 on failure.
-int UpdateResponse(ContentAnalysisResponse& response,
-                   const std::string& tag,
-                   ContentAnalysisResponse::Result::Status status);
+ResultCode UpdateResponse(ContentAnalysisResponse& response,
+                          const std::string& tag,
+                          ContentAnalysisResponse::Result::Status status);
 
 // Sets the response verdict of an event to `action`.  This is a convenience
 // function that is equivalent to the following:
@@ -222,9 +223,7 @@ int UpdateResponse(ContentAnalysisResponse& response,
 //
 // This function assumes the event's response has already been initialized
 // using UpdateResponse().
-//
-// Returns 0 on success and -1 on failure.
-int SetEventVerdictTo(
+ResultCode SetEventVerdictTo(
     ContentAnalysisEvent* event,
     ContentAnalysisResponse::Result::TriggeredRule::Action action);
 
@@ -233,9 +232,7 @@ int SetEventVerdictTo(
 //
 //   SetEventVerdictTo(event,
 //                     ContentAnalysisResponse::Result::TriggeredRule::BLOCK);
-//
-// Returns 0 on success and -1 on failure.
-int SetEventVerdictToBlock(ContentAnalysisEvent* event);
+ResultCode SetEventVerdictToBlock(ContentAnalysisEvent* event);
 
 }  // namespace sdk
 }  // namespace content_analysis

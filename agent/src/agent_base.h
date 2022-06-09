@@ -17,7 +17,7 @@ class AgentBase : public Agent {
  public:
   // Agent:
   const Config& GetConfig() const override;
-  int Stop() override;
+  ResultCode Stop() override;
 
  protected:
   AgentBase(Config config, std::unique_ptr<AgentEventHandler> handler);

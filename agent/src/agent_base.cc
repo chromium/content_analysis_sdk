@@ -16,8 +16,8 @@ const Agent::Config& AgentBase::GetConfig() const {
   return config_;
 }
 
-int AgentBase::Stop() {
-  return 0;
+ResultCode AgentBase::Stop() {
+  return ResultCode::OK;
 }
 
 }  // namespace sdk

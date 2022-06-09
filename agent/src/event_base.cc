@@ -11,11 +11,11 @@ ContentAnalysisEventBase::ContentAnalysisEventBase(
    const BrowserInfo& browser_info)
  : browser_info_(browser_info) {}
 
-int ContentAnalysisEventBase::Close() {
-  return 0;
+ResultCode ContentAnalysisEventBase::Close() {
+  return ResultCode::OK;
 }
 
-int UpdateResponse(ContentAnalysisResponse& response,
+ResultCode UpdateResponse(ContentAnalysisResponse& response,
                    const std::string& tag,
                    ContentAnalysisResponse::Result::Status status) {
   auto result = response.results_size() > 0
@@ -30,17 +30,17 @@ int UpdateResponse(ContentAnalysisResponse& response,
     result->set_status(status);
   }
 
-  return 0;
+  return ResultCode::OK;
 }
 
-int SetEventVerdictTo(
+ResultCode SetEventVerdictTo(
     ContentAnalysisEvent* event,
     ContentAnalysisResponse::Result::TriggeredRule::Action action) {
   // This function expects that the event's result has already been
   // initialized by a call to UpdateResponse().
 
   if (event->GetResponse().results_size() == 0) {
-    return -1;
+    return ResultCode::ERR_MISSING_RESULT;
   }
 
   auto result = event->GetResponse().mutable_results(0);
@@ -53,10 +53,10 @@ int SetEventVerdictTo(
 
   rule->set_action(action);
 
-  return 0;
+  return ResultCode::OK;
 }
 
-int SetEventVerdictToBlock(ContentAnalysisEvent* event) {
+ResultCode SetEventVerdictToBlock(ContentAnalysisEvent* event) {
   return SetEventVerdictTo(event,
       ContentAnalysisResponse::Result::TriggeredRule::BLOCK);
 }
