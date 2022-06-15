@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <latch>
 #include <memory>
 #include <thread>
 
@@ -74,6 +75,29 @@ struct DoubleSendTestHandler : public TestHandler {
   }
 };
 
+// A test handler that signals a latch after a client connects.
+// Can only be used with one client.
+struct SignalClientConnectedTestHandler : public TestHandler {
+  void OnBrowserConnected(const BrowserInfo& info) override {
+    TestHandler::OnBrowserConnected(info);
+    wait_for_client.count_down();
+  }
+
+  std::latch wait_for_client{ 1 };
+};
+
+// A test handler that signals a latch after a request is processed.
+// Can only be used with one request.
+struct SignalClientRequestedTestHandler : public TestHandler {
+  void OnAnalysisRequested(
+      std::unique_ptr<ContentAnalysisEvent> event) override {
+    TestHandler::OnAnalysisRequested(std::move(event));
+    wait_for_request.count_down();
+  }
+
+  std::latch wait_for_request{ 1 };
+};
+
 std::unique_ptr<AgentWin> CreateAgent(
     Agent::Config config,
   TestHandler** handler_ptr) {
@@ -134,7 +158,7 @@ TEST(AgentTest, Create_SecondFails) {
   ASSERT_NE(ERROR_SUCCESS, agent2->HandleOneEventForTesting());
 }
 
-TEST(AgentTest, Close) {
+TEST(AgentTest, Stop) {
   TestHandler* handler_ptr;
   auto agent = CreateAgent({ "test", false }, &handler_ptr);
   ASSERT_TRUE(agent);
@@ -146,6 +170,67 @@ TEST(AgentTest, Close) {
 
   agent->HandleEvents();
   thread.join();
+}
+
+TEST(AgentTest, ConnectAndStop) {
+  auto handler = std::make_unique<SignalClientConnectedTestHandler>();
+  auto* handler_ptr = handler.get();
+  auto agent = std::make_unique<AgentWin>(
+    Agent::Config{"test", false}, std::move(handler));
+  ASSERT_TRUE(agent);
+
+  // Client thread waits until latch reaches zero.
+  std::latch stop_client{ 1 };
+
+  // Create a thread to handle the client.  Since the client is sync, it can't
+  // run in the same thread as the agent.
+  std::thread client_thread([&stop_client]() {
+    auto client = CreateClient({ "test", false });
+    ASSERT_TRUE(client);
+    stop_client.wait();
+  });
+
+  // A thread that stops the agent after one client connects.
+  std::thread stop_agent([&handler_ptr, &agent]() {
+    handler_ptr->wait_for_client.wait();
+    agent->Stop();
+  });
+
+  agent->HandleEvents();
+
+  stop_client.count_down();
+  client_thread.join();
+  stop_agent.join();
+}
+
+TEST(AgentTest, ConnectRequestAndStop) {
+  auto handler = std::make_unique<SignalClientRequestedTestHandler>();
+  auto* handler_ptr = handler.get();
+  auto agent = std::make_unique<AgentWin>(
+    Agent::Config{"test", false}, std::move(handler));
+  ASSERT_TRUE(agent);
+
+  // Create a thread to handle the client.  Since the client is sync, it can't
+  // run in the same thread as the agent.
+  std::thread client_thread([]() {
+    auto client = CreateClient({ "test", false });
+    ASSERT_TRUE(client);
+
+    ContentAnalysisRequest request = BuildRequest("test");
+    ContentAnalysisResponse response;
+    client->Send(request, &response);
+  });
+
+  // A thread that stops the agent after one client connects.
+  std::thread stop_agent([&handler_ptr, &agent]() {
+    handler_ptr->wait_for_request.wait();
+    agent->Stop();
+  });
+
+  agent->HandleEvents();
+
+  client_thread.join();
+  stop_agent.join();
 }
 
 TEST(AgentTest, ConnectAndClose) {

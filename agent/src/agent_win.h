@@ -29,6 +29,9 @@ class AgentWin : public AgentBase {
   // Handles one pipe event and returns.  Used only in tests.
   DWORD HandleOneEventForTesting();
 
+  // Returns true if there is at least one client connected to this agent.
+  bool IsAClientConnectedForTesting();
+
 private:
   // Represents one connection to a Google Chrome browser, or one pipe
   // listening for a Google Chrome browser to connect.

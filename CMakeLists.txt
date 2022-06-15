@@ -137,6 +137,7 @@ include(GoogleTest)
 add_executable(unit_tests
   ${PLATFORM_TEST_CODE}
 )
+set_property(TARGET unit_tests PROPERTY CXX_STANDARD 20)
 target_include_directories(unit_tests
   PRIVATE
   ${AGENT_INCLUDES}
