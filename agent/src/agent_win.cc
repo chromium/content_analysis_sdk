@@ -71,7 +71,8 @@ DWORD AgentWin::Connection::Reset(const std::string& pipename) {
 DWORD AgentWin::Connection::HandleEvent(HANDLE handle) {
   DWORD err = ERROR_SUCCESS;
   DWORD count;
-  BOOL success = GetOverlappedResult(handle, &overlapped_, &count, FALSE);
+  BOOL success = GetOverlappedResult(handle, &overlapped_, &count,
+                                     /*wait=*/FALSE);
   if (!is_connected_) {
     // This connection is currently listing for a new connection from a Google
     // Chrome browser.  If the result is a success, this means the browser has
@@ -409,6 +410,15 @@ DWORD AgentWin::HandleOneEventForTesting() {
   std::vector<HANDLE> wait_handles;
   bool stopped;
   return HandleOneEvent(wait_handles, &stopped);
+}
+
+bool AgentWin::IsAClientConnectedForTesting() {
+  for (const auto& state : connections_) {
+    if (state->IsConnected()) {
+      return true;
+    }
+  }
+  return false;
 }
 
 DWORD AgentWin::HandleOneEvent(std::vector<HANDLE>& wait_handles, bool* stopped) {
