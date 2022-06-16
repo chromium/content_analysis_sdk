@@ -57,6 +57,27 @@ std::string GetPipeName(const std::string& base, bool user_specific) {
   return pipename;
 }
 
+DWORD CreatePipe(
+    const std::string& name,
+    bool is_first_pipe,
+    HANDLE* handle) {
+  DWORD err = ERROR_SUCCESS;
+
+  DWORD mode = PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED;
+  if (is_first_pipe) {
+    mode |= FILE_FLAG_FIRST_PIPE_INSTANCE;
+  }
+  *handle = CreateNamedPipeA(name.c_str(), mode,
+    PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT |
+    PIPE_REJECT_REMOTE_CLIENTS, PIPE_UNLIMITED_INSTANCES, kBufferSize,
+    kBufferSize, 0, /*securityAttr=*/nullptr);
+  if (*handle == INVALID_HANDLE_VALUE) {
+    err = GetLastError();
+  }
+
+  return err;
+}
+
 }  // internal
 }  // namespace sdk
 }  // namespace content_analysis
