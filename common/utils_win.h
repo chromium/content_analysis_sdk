@@ -14,6 +14,10 @@ namespace content_analysis {
 namespace sdk {
 namespace internal {
 
+// The default size of the buffer used to hold messages received from
+// Google Chrome.
+const DWORD kBufferSize = 4096;
+
 // Returns the user SID of the thread or process that calls thie function.
 // Returns an empty string on error.
 std::string GetUserSID();
@@ -22,6 +26,11 @@ std::string GetUserSID();
 // the agent and Google Chrome.  If `sid` is non-empty, make the pip name
 // specific to that user.
 std::string GetPipeName(const std::string& base, bool user_specific);
+
+// Creates a named pipe with the give name.  If `is_first_pipe` is true,
+// fail if this is not the first pipe using this name.  A handle to the
+// pipe is retuned in `handle`.
+DWORD CreatePipe(const std::string& name,bool is_first_pipe,HANDLE* handle);
 
 }  // internal
 }  // namespace sdk

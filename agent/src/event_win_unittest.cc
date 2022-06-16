@@ -5,6 +5,7 @@
 #include <memory>
 
 #include "agent/src/event_win.h"
+#include "common/utils_win.h"
 #include "gtest/gtest.h"
 
 namespace content_analysis {
@@ -12,10 +13,11 @@ namespace sdk {
 namespace testing {
 
 std::unique_ptr<ContentAnalysisEventWin> CreateEvent(
+    HANDLE handle,
     const BrowserInfo& browser_info,
     ContentAnalysisRequest request) {
   return std::make_unique<ContentAnalysisEventWin>(
-      INVALID_HANDLE_VALUE, browser_info, std::move(request));
+      handle, browser_info, std::move(request));
 }
 
 TEST(EventTest, Create_BrowserInfo) {
@@ -24,7 +26,7 @@ TEST(EventTest, Create_BrowserInfo) {
   *request.add_tags() = "foo";
   request.set_request_token("req-token");
 
-  auto event = CreateEvent(bi, request);
+  auto event = CreateEvent(INVALID_HANDLE_VALUE, bi, request);
   ASSERT_TRUE(event);
 
   ASSERT_EQ(bi.pid, event->GetBrowserInfo().pid);
@@ -37,7 +39,7 @@ TEST(EventTest, Create_Request) {
   *request.add_tags() = "foo";
   request.set_request_token("req-token");
 
-  auto event = CreateEvent(bi, request);
+  auto event = CreateEvent(INVALID_HANDLE_VALUE, bi, request);
   ASSERT_TRUE(event);
 
   ASSERT_EQ(1u, event->GetRequest().tags_size());
@@ -52,7 +54,7 @@ TEST(EventTest, Create_Init) {
   *request.add_tags() = "foo";
   request.set_request_token("req-token");
 
-  auto event = CreateEvent(bi, request);
+  auto event = CreateEvent(INVALID_HANDLE_VALUE, bi, request);
   ASSERT_TRUE(event);
 
   ASSERT_EQ(ERROR_SUCCESS, event->Init());
@@ -74,10 +76,38 @@ TEST(EventTest, Create_Init_RequestNoRequestToken) {
   ContentAnalysisRequest request;
   *request.add_tags() = "foo";
 
-  auto event = CreateEvent(bi, request);
+  auto event = CreateEvent(INVALID_HANDLE_VALUE, bi, request);
   ASSERT_TRUE(event);
 
   ASSERT_EQ(ERROR_INVALID_DATA, event->Init());
+}
+
+TEST(EventTest, Write_BadPipe) {
+  HANDLE pipe;
+  DWORD err = internal::CreatePipe(
+      internal::GetPipeName("testpipe", false), true, &pipe);
+  ASSERT_EQ(ERROR_SUCCESS, err);
+  ASSERT_NE(INVALID_HANDLE_VALUE, pipe);
+
+  // Create an event with the dummy pipe and initilalize it.
+  const BrowserInfo bi{ 12345, "/path/to/binary" };
+  ContentAnalysisRequest request;
+  request.set_request_token("req-token");
+  *request.add_tags() = "dlp";
+  request.set_text_content("test");
+  auto event = std::make_unique<ContentAnalysisEventWin>(
+      pipe, bi, std::move(request));
+  ASSERT_TRUE(event);
+  err = event->Init();
+  ASSERT_EQ(ERROR_SUCCESS, err);
+
+  // Close the handle before trying to send the response.
+  // This simulates an error with the pipe.
+  CloseHandle(pipe);
+  ASSERT_EQ(ERROR_SUCCESS, GetLastError());
+
+  // The following call should not hang.
+  event->Send();
 }
 
 }  // namespace testing

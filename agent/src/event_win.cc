@@ -29,6 +29,13 @@ static DWORD WriteMessageToPipe(HANDLE pipe, const std::string& message) {
   const char* cursor = message.data();
   for (DWORD size = message.length(); size > 0;) {
     if (WriteFile(pipe, cursor, size, /*written=*/nullptr, &overlapped)) {
+      err = ERROR_SUCCESS;
+      break;
+    }
+
+    // If an I/O is not pending, return the error.
+    err = GetLastError();
+    if (err != ERROR_IO_PENDING) {
       break;
     }
 

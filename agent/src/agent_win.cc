@@ -25,10 +25,6 @@ const DWORD kMinNumListeningPipeInstances = 2;
 // of pipes in listening mode plus the stop event.
 const DWORD kMinNumWaitHandles = kMinNumListeningPipeInstances + 1;
 
-// The default size of the buffer used to hold messages received from
-// Google Chrome.
-const DWORD kBufferSize = 4096;
-
 // static
 std::unique_ptr<Agent> Agent::Create(
     Config config,
@@ -84,7 +80,7 @@ DWORD AgentWin::Connection::HandleEvent(HANDLE handle) {
       // tell the handler about it.
 
       is_connected_ = true;
-      buffer_.resize(kBufferSize);
+      buffer_.resize(internal::kBufferSize);
 
       err = BuildBrowserInfo();
       if (err == ERROR_SUCCESS) {
@@ -118,27 +114,6 @@ DWORD AgentWin::Connection::HandleEvent(HANDLE handle) {
     // Don't propagate all the "success" error codes to the called to keep
     // this simpler.
     err = ERROR_SUCCESS;
-  }
-
-  return err;
-}
-
-DWORD AgentWin::Connection::CreatePipe(
-    const std::string& name,
-    bool is_first_pipe,
-    HANDLE* handle) {
-  DWORD err = ERROR_SUCCESS;
-
-  DWORD mode = PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED;
-  if (is_first_pipe) {
-    mode |= FILE_FLAG_FIRST_PIPE_INSTANCE;
-  }
-  *handle = CreateNamedPipeA(name.c_str(), mode,
-    PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT |
-    PIPE_REJECT_REMOTE_CLIENTS, PIPE_UNLIMITED_INSTANCES, kBufferSize,
-    kBufferSize, 0, /*securityAttr=*/nullptr);
-  if (*handle == INVALID_HANDLE_VALUE) {
-    err = GetLastError();
   }
 
   return err;
@@ -178,7 +153,7 @@ DWORD AgentWin::Connection::ResetInternal(const std::string& pipename,
       err = GetLastError();
     }
   } else {
-    err = CreatePipe(pipename, is_first_pipe, &handle_);
+    err = internal::CreatePipe(pipename, is_first_pipe, &handle_);
   }
 
   // Make sure event starts in reset state.
@@ -266,7 +241,7 @@ DWORD AgentWin::Connection::OnReadFile(BOOL done_reading, DWORD count) {
 
   DWORD err = GetLastError();
   if (err == ERROR_MORE_DATA) {
-    read_size_ = kBufferSize;
+    read_size_ = internal::kBufferSize;
     buffer_.resize(buffer_.size() + read_size_);
     cursor_ = buffer_.data() + buffer_.size() - read_size_;
   }
