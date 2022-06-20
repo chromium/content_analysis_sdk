@@ -43,6 +43,8 @@ bool ParseCommandLine(int argc, char* argv[]) {
         connector = content_analysis::sdk::BULK_DATA_ENTRY;
       } else if (connector_str == "print") {
         connector = content_analysis::sdk::PRINT;
+      } else if (connector_str == "file-transfer") {
+        connector = content_analysis::sdk::FILE_TRANSFER;
       } else {
         std::cout << "[Demo] Incorrect command line arg: " << arg << std::endl;
         return false;
@@ -74,7 +76,7 @@ void PrintHelp() {
     << "Otherwise the content is read from a file called 'content_or_file'." << std::endl
     << "Multiple [@]content_or_file arguments may be specified, each generates one request." << std::endl
     << std::endl << "Options:"  << std::endl
-    << kArgConnector << "<connector> : one of 'download', 'attach' (default), 'bulk-data-entry', or 'print'" << std::endl
+    << kArgConnector << "<connector> : one of 'download', 'attach' (default), 'bulk-data-entry', 'print', or 'file-transfer'" << std::endl
     << kArgRequestToken << "<unique-token> : defaults to 'req-12345'" << std::endl
     << kArgTag << "<tag> : defaults to 'dlp'" << std::endl
     << kArgUrl << "<url> : defaults to 'https://upload.example.com'" << std::endl
