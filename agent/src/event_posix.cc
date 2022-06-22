@@ -14,8 +14,8 @@ namespace sdk {
   *request() = std::move(req);
 }
 
-int ContentAnalysisEventPosix::Send() {
-  return -1;
+ResultCode ContentAnalysisEventPosix::Send() {
+  return ResultCode::ERR_UNEXPECTED;
 }
 
 }  // namespace sdk

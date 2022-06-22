@@ -11,7 +11,9 @@ namespace sdk {
 // static
 std::unique_ptr<Agent> Agent::Create(
     Config config,
-    std::unique_ptr<AgentEventHandler> handler) {
+    std::unique_ptr<AgentEventHandler> handler,
+    ResultCode* rc) {
+  *rc = ResultCode::ERR_UNEXPECTED;
   return std::make_unique<AgentMac>(std::move(config), std::move(handler));
 }
 
@@ -20,7 +22,9 @@ AgentMac::AgentMac(
     std::unique_ptr<AgentEventHandler> handler)
   : AgentBase(std::move(config), std::move(handler)) {}
 
-void AgentMac::HandleEvents() {}
+ResultCode AgentMac::HandleEvents() {
+  return ResultCode::ERR_UNEXPECTED;
+}
 
 }  // namespace sdk
 }  // namespace content_analysis

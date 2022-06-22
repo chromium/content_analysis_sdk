@@ -14,8 +14,8 @@ ContentAnalysisEventMac::ContentAnalysisEventMac(
   *request() = std::move(req);
 }
 
-int ContentAnalysisEventMac::Send() {
-  return -1;
+ResultCode ContentAnalysisEventMac::Send() {
+  return ResultCode::ERR_UNEXPECTED;
 }
 
 }  // namespace sdk

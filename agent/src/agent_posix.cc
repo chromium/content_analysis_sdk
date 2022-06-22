@@ -13,7 +13,9 @@ namespace sdk {
 // static
 std::unique_ptr<Agent> Agent::Create(
     Config config,
-    std::unique_ptr<AgentEventHandler> handler) {
+    std::unique_ptr<AgentEventHandler> handler,
+    ResultCode* rc) {
+  *rc = ResultCode::ERR_UNEXPECTED;
   return std::make_unique<AgentPosix>(std::move(config), std::move(handler));
 }
 
@@ -22,7 +24,9 @@ AgentPosix::AgentPosix(
     std::unique_ptr<AgentEventHandler> handler)
   : AgentBase(std::move(config), std::move(handler)) {}
 
-void AgentPosix::HandleEvents() {}
+ResultCode AgentPosix::HandleEvents() {
+  return ResultCode::ERR_UNEXPECTED;
+}
 
 }  // namespace sdk
 }  // namespace content_analysis

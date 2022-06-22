@@ -15,7 +15,7 @@ class AgentMac : public AgentBase {
  public:
   AgentMac(Config config, std::unique_ptr<AgentEventHandler> handler);
 
-  void HandleEvents() override;
+  ResultCode HandleEvents() override;
 
   // TODO(rogerta): Fill in implementation.
 };
