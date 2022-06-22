@@ -100,13 +100,14 @@ struct SignalClientRequestedTestHandler : public TestHandler {
 
 std::unique_ptr<AgentWin> CreateAgent(
     Agent::Config config,
-    TestHandler** handler_ptr) {
+    TestHandler** handler_ptr,
+    ResultCode expected_rc=ResultCode::OK) {
   ResultCode rc;
   auto handler = std::make_unique<TestHandler>();
   *handler_ptr = handler.get();
   auto agent = std::make_unique<AgentWin>(
       std::move(config), std::move(handler), &rc);
-  EXPECT_EQ(ResultCode::OK, rc);
+  EXPECT_EQ(expected_rc, rc);
   return agent;
 }
 
@@ -141,10 +142,12 @@ TEST(AgentTest, Create_InvalidPipename) {
   // name.
   const Agent::Config config{"", false};
   TestHandler* handler_ptr;
-  auto agent = CreateAgent(config, &handler_ptr);
+  auto agent = CreateAgent(config, &handler_ptr,
+      ResultCode::ERR_INVALID_CHANNEL_NAME);
   ASSERT_TRUE(agent);
 
-  ASSERT_NE(ResultCode::OK, agent->HandleOneEventForTesting());
+  ASSERT_EQ(ResultCode::ERR_AGENT_NOT_INITIALIZED,
+            agent->HandleOneEventForTesting());
 }
 
 // Can't create two agents with the same name.
@@ -155,10 +158,12 @@ TEST(AgentTest, Create_SecondFails) {
   ASSERT_TRUE(agent1);
 
   TestHandler* handler_ptr2;
-  auto agent2 = CreateAgent(config, &handler_ptr2);
+  auto agent2 = CreateAgent(config, &handler_ptr2,
+      ResultCode::ERR_AGENT_ALREADY_EXISTS);
   ASSERT_TRUE(agent2);
 
-  ASSERT_NE(ResultCode::OK, agent2->HandleOneEventForTesting());
+  ASSERT_EQ(ResultCode::ERR_AGENT_NOT_INITIALIZED,
+            agent2->HandleOneEventForTesting());
 }
 
 TEST(AgentTest, Stop) {
