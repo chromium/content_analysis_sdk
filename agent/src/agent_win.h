@@ -8,6 +8,7 @@
 #include <windows.h>
 
 #include <memory>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -29,6 +30,7 @@ class AgentWin : public AgentBase {
   // Agent:
   ResultCode HandleEvents() override;
   ResultCode Stop() override;
+  std::string DebugString() const override;
 
   // Handles one pipe event and returns.  Used only in tests.
   ResultCode HandleOneEventForTesting();
@@ -69,6 +71,9 @@ private:
     // Hnadles an event for this connection.  `wait_handle` corresponds to
     // this connections wait handle.
     ResultCode HandleEvent(HANDLE wait_handle);
+
+    // Append debuf information to the string stream.
+    void AppendDebugString(std::stringstream& state) const;
 
    private:
     // Listens for a new connection from Google Chrome.

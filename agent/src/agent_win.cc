@@ -129,6 +129,17 @@ ResultCode AgentWin::Connection::HandleEvent(HANDLE handle) {
   return rc;
 }
 
+void AgentWin::Connection::AppendDebugString(std::stringstream& state) const {
+  state << "{handle=" << handle_;
+  if (is_connected_) {
+    state << " connected";
+  }
+  state << " pid=" << browser_info_.pid;
+  state << " rsize=" << read_size_;
+  state << " fsize=" << final_size_;
+  state << "}";
+}
+
 ResultCode AgentWin::Connection::ConnectPipe() {
   // In overlapped mode, connecting to a named pipe always returns false.
   if (ConnectNamedPipe(handle_, &overlapped_)) {
@@ -381,6 +392,20 @@ ResultCode AgentWin::HandleEvents() {
 ResultCode AgentWin::Stop() {
   SetEvent(stop_event_);
   return AgentBase::Stop();
+}
+
+std::string AgentWin::DebugString() const {
+  std::stringstream state;
+  state << "AgentWin{pipe=\"" << pipename_;
+  state << "\" stop=" << stop_event_;
+
+  for (size_t i = 0; i < connections_.size(); ++i) {
+    state << " conn@" << i;
+    connections_[i]->AppendDebugString(state);
+  }
+
+  state << "}" << std::ends;
+  return state.str();
 }
 
 void AgentWin::GetHandles(std::vector<HANDLE>& wait_handles) const {

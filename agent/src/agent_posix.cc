@@ -24,5 +24,9 @@ AgentPosix::AgentPosix(
 
 void AgentPosix::HandleEvents() {}
 
+std::string AgentPosix::DebugString() const {
+  return std::string();
+}
+
 }  // namespace sdk
 }  // namespace content_analysis

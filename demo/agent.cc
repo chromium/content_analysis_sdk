@@ -21,12 +21,15 @@ int main(int argc, char* argv[]) {
     return 1;
   };
 
+  std::cout << "[Demo] " << agent->DebugString() << std::endl;
+
   // Blocks, sending events to the handler until agent->Stop() is called.
   rc = agent->HandleEvents();
   if (rc != content_analysis::sdk::ResultCode::OK) {
     std::cout << "[Demo] Error from handling events: "
               << content_analysis::sdk::ResultCodeToString(rc)
               << std::endl;
+    std::cout << "[Demo] " << agent->DebugString() << std::endl;
   }
 
   return 0;

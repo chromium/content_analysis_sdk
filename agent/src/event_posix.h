@@ -18,6 +18,7 @@ class ContentAnalysisEventPosix : public ContentAnalysisEventBase {
 
   // ContentAnalysisEvent:
   int Send() override;
+  std::string DebugString() const override;
 
   // TODO(rogerta): Fill in implementation.
 };

@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <sstream>
 #include <utility>
 
 #include "event_win.h"
@@ -99,6 +100,19 @@ ResultCode ContentAnalysisEventWin::Send() {
   DWORD err = WriteMessageToPipe(hPipe_,
                                  agent_to_chrome()->SerializeAsString());
   return ErrorToResultCode(err);
+}
+
+std::string ContentAnalysisEventWin::DebugString() const {
+  std::stringstream state;
+  state << "ContentAnalysisEventWin{handle=" << hPipe_;
+  state << " pid=" << GetBrowserInfo().pid;
+  state << " rtoken=" << GetRequest().request_token();
+  if (response_sent_) {
+    state << " sent";
+  }
+  state << "}" << std::ends;
+
+  return state.str();
 }
 
 void ContentAnalysisEventWin::Shutdown() {

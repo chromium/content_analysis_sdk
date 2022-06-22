@@ -22,5 +22,9 @@ AgentMac::AgentMac(
 
 void AgentMac::HandleEvents() {}
 
+std::string AgentMac::DebugString() const {
+  return std::string();
+}
+
 }  // namespace sdk
 }  // namespace content_analysis

@@ -18,5 +18,9 @@ int ContentAnalysisEventPosix::Send() {
   return -1;
 }
 
+std::string ContentAnalysisEventPosix::DebugString() const {
+  return std::string();
+}
+
 }  // namespace sdk
 }  // namespace content_analysis

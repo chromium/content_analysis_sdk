@@ -18,5 +18,9 @@ int ContentAnalysisEventMac::Send() {
   return -1;
 }
 
+std::string ContentAnalysisEventMac::DebugString() const {
+  return std::string();
+}
+
 }  // namespace sdk
 }  // namespace content_analysis
