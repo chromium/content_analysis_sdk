@@ -71,6 +71,8 @@ set(BROWSER_INCLUDES
 # platform being built.
 if(WIN)
   set(PLATFORM_AGENT_CODE
+    ./agent/src/agent_utils_win.cc
+    ./agent/src/agent_utils_win.h
     ./agent/src/agent_win.cc
     ./agent/src/agent_win.h
     ./agent/src/event_win.cc
@@ -157,6 +159,7 @@ gtest_discover_tests(unit_tests)
 # requests from Google Chrome.
 add_library(cac_agent
   ./agent/include/content_analysis/sdk/analysis_agent.h
+  ./agent/include/content_analysis/sdk/result_codes.h
   ./agent/src/agent_base.cc
   ./agent/src/agent_base.h
   ./agent/src/event_base.cc

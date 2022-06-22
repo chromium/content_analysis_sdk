@@ -30,8 +30,8 @@ struct TestHandler : public AgentEventHandler {
   void OnAnalysisRequested(
       std::unique_ptr<ContentAnalysisEvent> event) override {
     ++request_count_;
-    int ret = event->Send();
-    ASSERT_EQ(0, ret);
+    ResultCode ret = event->Send();
+    ASSERT_EQ(ResultCode::OK, ret);
   }
   void OnResponseAcknowledged(
       const ContentAnalysisAcknowledgement& ack) override {
@@ -52,11 +52,11 @@ struct CloseEventTestHandler : public TestHandler {
     ++request_count_;
 
     // Closing the event before sending should generate an error.
-    int ret = event->Close();
-    ASSERT_EQ(0, ret);
+    ResultCode ret = event->Close();
+    ASSERT_EQ(ResultCode::OK, ret);
 
     ret = event->Send();
-    ASSERT_NE(0, ret);
+    ASSERT_NE(ResultCode::OK, ret);
   }
 };
 
@@ -66,12 +66,12 @@ struct DoubleSendTestHandler : public TestHandler {
       std::unique_ptr<ContentAnalysisEvent> event) override {
     ++request_count_;
 
-    int ret = event->Send();
-    ASSERT_EQ(0, ret);
+    ResultCode ret = event->Send();
+    ASSERT_EQ(ResultCode::OK, ret);
 
     // Trying to send again fails.
     ret = event->Send();
-    ASSERT_NE(0, ret);
+    ASSERT_NE(ResultCode::OK, ret);
   }
 };
 
@@ -100,11 +100,15 @@ struct SignalClientRequestedTestHandler : public TestHandler {
 
 std::unique_ptr<AgentWin> CreateAgent(
     Agent::Config config,
-  TestHandler** handler_ptr) {
+    TestHandler** handler_ptr,
+    ResultCode expected_rc=ResultCode::OK) {
+  ResultCode rc;
   auto handler = std::make_unique<TestHandler>();
   *handler_ptr = handler.get();
-  return std::make_unique<AgentWin>(
-      std::move(config), std::move(handler));
+  auto agent = std::make_unique<AgentWin>(
+      std::move(config), std::move(handler), &rc);
+  EXPECT_EQ(expected_rc, rc);
+  return agent;
 }
 
 std::unique_ptr<ClientWin> CreateClient(
@@ -138,10 +142,12 @@ TEST(AgentTest, Create_InvalidPipename) {
   // name.
   const Agent::Config config{"", false};
   TestHandler* handler_ptr;
-  auto agent = CreateAgent(config, &handler_ptr);
+  auto agent = CreateAgent(config, &handler_ptr,
+      ResultCode::ERR_INVALID_CHANNEL_NAME);
   ASSERT_TRUE(agent);
 
-  ASSERT_NE(ERROR_SUCCESS, agent->HandleOneEventForTesting());
+  ASSERT_EQ(ResultCode::ERR_AGENT_NOT_INITIALIZED,
+            agent->HandleOneEventForTesting());
 }
 
 // Can't create two agents with the same name.
@@ -152,10 +158,12 @@ TEST(AgentTest, Create_SecondFails) {
   ASSERT_TRUE(agent1);
 
   TestHandler* handler_ptr2;
-  auto agent2 = CreateAgent(config, &handler_ptr2);
+  auto agent2 = CreateAgent(config, &handler_ptr2,
+      ResultCode::ERR_AGENT_ALREADY_EXISTS);
   ASSERT_TRUE(agent2);
 
-  ASSERT_NE(ERROR_SUCCESS, agent2->HandleOneEventForTesting());
+  ASSERT_EQ(ResultCode::ERR_AGENT_NOT_INITIALIZED,
+            agent2->HandleOneEventForTesting());
 }
 
 TEST(AgentTest, Stop) {
@@ -173,11 +181,13 @@ TEST(AgentTest, Stop) {
 }
 
 TEST(AgentTest, ConnectAndStop) {
+  ResultCode rc;
   auto handler = std::make_unique<SignalClientConnectedTestHandler>();
   auto* handler_ptr = handler.get();
   auto agent = std::make_unique<AgentWin>(
-    Agent::Config{"test", false}, std::move(handler));
+    Agent::Config{"test", false}, std::move(handler), &rc);
   ASSERT_TRUE(agent);
+  ASSERT_EQ(ResultCode::OK, rc);
 
   // Client thread waits until latch reaches zero.
   std::latch stop_client{ 1 };
@@ -204,11 +214,13 @@ TEST(AgentTest, ConnectAndStop) {
 }
 
 TEST(AgentTest, ConnectRequestAndStop) {
+  ResultCode rc;
   auto handler = std::make_unique<SignalClientRequestedTestHandler>();
   auto* handler_ptr = handler.get();
   auto agent = std::make_unique<AgentWin>(
-    Agent::Config{"test", false}, std::move(handler));
+      Agent::Config{"test", false}, std::move(handler), &rc);
   ASSERT_TRUE(agent);
+  ASSERT_EQ(ResultCode::OK, rc);
 
   // Create a thread to handle the client.  Since the client is sync, it can't
   // run in the same thread as the agent.
@@ -324,11 +336,13 @@ TEST(AgentTest, Request_Large) {
 }
 
 TEST(AgentTest, Request_DoubleSend) {
+  ResultCode rc;
   auto handler = std::make_unique<DoubleSendTestHandler>();
   DoubleSendTestHandler* handler_ptr = handler.get();
   auto agent = std::make_unique<AgentWin>(
-    Agent::Config{"test", false}, std::move(handler));
+    Agent::Config{"test", false}, std::move(handler), &rc);
   ASSERT_TRUE(agent);
+  ASSERT_EQ(ResultCode::OK, rc);
 
   bool done = false;
 
@@ -357,11 +371,13 @@ TEST(AgentTest, Request_DoubleSend) {
 }
 
 TEST(AgentTest, Request_CloseEvent) {
+  ResultCode rc;
   auto handler = std::make_unique<CloseEventTestHandler>();
   CloseEventTestHandler* handler_ptr = handler.get();
   auto agent = std::make_unique<AgentWin>(
-      Agent::Config{"test", false}, std::move(handler));
+      Agent::Config{"test", false}, std::move(handler), &rc);
   ASSERT_TRUE(agent);
+  ASSERT_EQ(ResultCode::OK, rc);
 
   bool done = false;
 

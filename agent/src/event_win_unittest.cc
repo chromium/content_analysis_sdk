@@ -57,7 +57,7 @@ TEST(EventTest, Create_Init) {
   auto event = CreateEvent(INVALID_HANDLE_VALUE, bi, request);
   ASSERT_TRUE(event);
 
-  ASSERT_EQ(ERROR_SUCCESS, event->Init());
+  ASSERT_EQ(ResultCode::OK, event->Init());
 
   // Initializing an event should initialize the contained response for a
   // success verdict that matches the request.
@@ -79,7 +79,7 @@ TEST(EventTest, Create_Init_RequestNoRequestToken) {
   auto event = CreateEvent(INVALID_HANDLE_VALUE, bi, request);
   ASSERT_TRUE(event);
 
-  ASSERT_EQ(ERROR_INVALID_DATA, event->Init());
+  ASSERT_EQ(ResultCode::ERR_MISSING_REQUEST_TOKEN, event->Init());
 }
 
 TEST(EventTest, Write_BadPipe) {
@@ -98,8 +98,8 @@ TEST(EventTest, Write_BadPipe) {
   auto event = std::make_unique<ContentAnalysisEventWin>(
       pipe, bi, std::move(request));
   ASSERT_TRUE(event);
-  err = event->Init();
-  ASSERT_EQ(ERROR_SUCCESS, err);
+  ResultCode rc = event->Init();
+  ASSERT_EQ(ResultCode::OK, rc);
 
   // Close the handle before trying to send the response.
   // This simulates an error with the pipe.

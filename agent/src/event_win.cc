@@ -5,11 +5,14 @@
 #include <utility>
 
 #include "event_win.h"
+#include "agent_utils_win.h"
 
 namespace content_analysis {
 namespace sdk {
 
-// Writes a string to the pipe. Returns True if successful, else returns False.
+// Writes a string to the pipe. Returns ERROR_SUCCESS if successful, else
+// returns GetLastError() of the write.  This function does not return until
+// the entire message has been sent (or an error occurs).
 static DWORD WriteMessageToPipe(HANDLE pipe, const std::string& message) {
   if (message.empty()) {
     return ERROR_SUCCESS;
@@ -18,9 +21,9 @@ static DWORD WriteMessageToPipe(HANDLE pipe, const std::string& message) {
   OVERLAPPED overlapped;
   memset(&overlapped, 0, sizeof(overlapped));
   overlapped.hEvent = CreateEvent(/*securityAttr=*/nullptr,
-    /*manualReset=*/TRUE,
-    /*initialState=*/FALSE,
-    /*name=*/nullptr);
+                                  /*manualReset=*/TRUE,
+                                  /*initialState=*/FALSE,
+                                  /*name=*/nullptr);
   if (overlapped.hEvent == nullptr) {
     return GetLastError();
   }
@@ -67,36 +70,35 @@ ContentAnalysisEventWin::~ContentAnalysisEventWin() {
   Shutdown();
 }
 
-DWORD ContentAnalysisEventWin::Init() {
+ResultCode ContentAnalysisEventWin::Init() {
   // TODO(rogerta): do some extra validation of the request?
   if (request()->request_token().empty()) {
-    return ERROR_INVALID_DATA;
+    return ResultCode::ERR_MISSING_REQUEST_TOKEN;
   }
 
   response()->set_request_token(request()->request_token());
 
   // Prepare the response so that ALLOW verdicts are the default().
-  UpdateResponse(*response(),
+  return UpdateResponse(*response(),
       request()->tags_size() > 0 ? request()->tags(0) : std::string(),
       ContentAnalysisResponse::Result::SUCCESS);
-  return ERROR_SUCCESS;
 }
 
-int ContentAnalysisEventWin::Close() {
+ResultCode ContentAnalysisEventWin::Close() {
   Shutdown();
   return ContentAnalysisEventBase::Close();
 }
 
-int ContentAnalysisEventWin::Send() {
+ResultCode ContentAnalysisEventWin::Send() {
   if (response_sent_) {
-    return -1;
+    return ResultCode::ERR_RESPONSE_ALREADY_SENT;
   }
 
   response_sent_ = true;
 
   DWORD err = WriteMessageToPipe(hPipe_,
                                  agent_to_chrome()->SerializeAsString());
-  return err == ERROR_SUCCESS ? 0 : -1;
+  return ErrorToResultCode(err);
 }
 
 void ContentAnalysisEventWin::Shutdown() {

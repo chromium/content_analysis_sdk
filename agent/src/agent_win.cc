@@ -10,6 +10,7 @@
 
 #include "common/utils_win.h"
 
+#include "agent_utils_win.h"
 #include "agent_win.h"
 #include "event_win.h"
 
@@ -28,14 +29,18 @@ const DWORD kMinNumWaitHandles = kMinNumListeningPipeInstances + 1;
 // static
 std::unique_ptr<Agent> Agent::Create(
     Config config,
-    std::unique_ptr<AgentEventHandler> handler) {
-  return std::make_unique<AgentWin>(std::move(config), std::move(handler));
+    std::unique_ptr<AgentEventHandler> handler,
+    ResultCode* rc) {
+  auto agent = std::make_unique<AgentWin>(std::move(config), std::move(handler), rc);
+  return *rc == ResultCode::OK ? std::move(agent) : nullptr;
 }
 
 AgentWin::Connection::Connection(const std::string& pipename,
                                  AgentEventHandler* handler,
-                                 bool is_first_pipe)
+                                 bool is_first_pipe,
+                                 ResultCode* rc)
     : handler_(handler)  {
+  *rc = ResultCode::OK;
   memset(&overlapped_, 0, sizeof(overlapped_));
   // Create a manual reset event as specified for overlapped IO.
   // Use default security attriutes and no name since this event is not
@@ -44,7 +49,12 @@ AgentWin::Connection::Connection(const std::string& pipename,
                                    /*manualReset=*/TRUE,
                                    /*initialState=*/FALSE,
                                    /*name=*/nullptr);
-  ResetInternal(pipename, is_first_pipe);
+  if (!overlapped_.hEvent) {
+    *rc = ResultCode::ERR_CANNOT_CREATE_CHANNEL_IO_EVENT;
+    return;
+  }
+
+  *rc = ResetInternal(pipename, is_first_pipe);
 }
 
 AgentWin::Connection::~Connection() {
@@ -60,12 +70,12 @@ AgentWin::Connection::~Connection() {
   }
 }
 
-DWORD AgentWin::Connection::Reset(const std::string& pipename) {
+ResultCode AgentWin::Connection::Reset(const std::string& pipename) {
   return ResetInternal(pipename, false);
 }
 
-DWORD AgentWin::Connection::HandleEvent(HANDLE handle) {
-  DWORD err = ERROR_SUCCESS;
+ResultCode AgentWin::Connection::HandleEvent(HANDLE handle) {
+  auto rc = ResultCode::OK;
   DWORD count;
   BOOL success = GetOverlappedResult(handle, &overlapped_, &count,
                                      /*wait=*/FALSE);
@@ -82,12 +92,12 @@ DWORD AgentWin::Connection::HandleEvent(HANDLE handle) {
       is_connected_ = true;
       buffer_.resize(internal::kBufferSize);
 
-      err = BuildBrowserInfo();
-      if (err == ERROR_SUCCESS) {
+      rc = BuildBrowserInfo();
+      if (rc == ResultCode::OK) {
         handler_->OnBrowserConnected(browser_info_);
       }
     } else {
-      err = GetLastError();
+      rc = ErrorToResultCode(GetLastError());
     }
   } else {
     // Some data has arrived from Google Chrome. This data is (part of) an
@@ -99,36 +109,36 @@ DWORD AgentWin::Connection::HandleEvent(HANDLE handle) {
     //
     // `success` is true if the data just read is the last bytes for a message.
     // Otherwise it is false.
-    err = OnReadFile(success, count);
+    rc = OnReadFile(success, count);
   }
 
   // If all data has been read, queue another read.
-  if (err == ERROR_SUCCESS || err == ERROR_MORE_DATA) {
-    err = QueueReadFile(err == ERROR_SUCCESS);
+  if (rc == ResultCode::OK || rc == ResultCode::ERR_MORE_DATA) {
+    rc = QueueReadFile(rc == ResultCode::OK);
   }
 
-  if (err != ERROR_SUCCESS && err != ERROR_IO_PENDING &&
-      err != ERROR_MORE_DATA) {
+  if (rc != ResultCode::OK && rc != ResultCode::ERR_IO_PENDING &&
+      rc != ResultCode::ERR_MORE_DATA) {
     Cleanup();
   } else {
     // Don't propagate all the "success" error codes to the called to keep
     // this simpler.
-    err = ERROR_SUCCESS;
+    rc = ResultCode::OK;
   }
 
-  return err;
+  return rc;
 }
 
-DWORD AgentWin::Connection::ConnectPipe() {
+ResultCode AgentWin::Connection::ConnectPipe() {
   // In overlapped mode, connecting to a named pipe always returns false.
   if (ConnectNamedPipe(handle_, &overlapped_)) {
-    return GetLastError();
+    return ErrorToResultCode(GetLastError());
   }
 
   DWORD err = GetLastError();
   if (err == ERROR_IO_PENDING) {
     // Waiting for a Google Chrome Browser to connect.
-    return ERROR_SUCCESS;
+    return ResultCode::OK;
   } else if (err == ERROR_PIPE_CONNECTED) {
     // A Google Chrome browser is already connected.  Make sure event is in
     // signaled state in order to process the connection.
@@ -139,38 +149,39 @@ DWORD AgentWin::Connection::ConnectPipe() {
     }
   }
 
-  return err;
+  return ErrorToResultCode(err);
 }
 
-DWORD AgentWin::Connection::ResetInternal(const std::string& pipename,
-                                          bool is_first_pipe) {
-  DWORD err = ERROR_SUCCESS;
+ResultCode AgentWin::Connection::ResetInternal(const std::string& pipename,
+                                               bool is_first_pipe) {
+  auto rc = ResultCode::OK;
 
   // If this is the not the first time, disconnect from any existing Google
   // Chrome browser.  Otherwise creater a new pipe.
   if (handle_ != INVALID_HANDLE_VALUE) {
     if (!DisconnectNamedPipe(handle_)) {
-      err = GetLastError();
+      rc = ErrorToResultCode(GetLastError());
     }
   } else {
-    err = internal::CreatePipe(pipename, is_first_pipe, &handle_);
+    rc = ErrorToResultCode(
+        internal::CreatePipe(pipename, is_first_pipe, &handle_));
   }
 
   // Make sure event starts in reset state.
-  if (err == ERROR_SUCCESS && !ResetEvent(overlapped_.hEvent)) {
-    err = GetLastError();
+  if (rc == ResultCode::OK && !ResetEvent(overlapped_.hEvent)) {
+    rc = ErrorToResultCode(GetLastError());
   }
 
-  if (err == ERROR_SUCCESS) {
-    err = ConnectPipe();
+  if (rc == ResultCode::OK) {
+    rc = ConnectPipe();
   }
 
-  if (err != ERROR_SUCCESS) {
+  if (rc != ResultCode::OK) {
     Cleanup();
     handle_ = INVALID_HANDLE_VALUE;
   }
 
-  return err;
+  return rc;
 }
 
 void AgentWin::Connection::Cleanup() {
@@ -196,7 +207,7 @@ void AgentWin::Connection::Cleanup() {
   // instance.
 }
 
-DWORD AgentWin::Connection::QueueReadFile(bool reset_cursor) {
+ResultCode AgentWin::Connection::QueueReadFile(bool reset_cursor) {
   if (reset_cursor) {
     cursor_ = buffer_.data();
     read_size_ = buffer_.size();
@@ -213,16 +224,16 @@ DWORD AgentWin::Connection::QueueReadFile(bool reset_cursor) {
   //    returns FALSE and the last error is something other than
   //    ERROR_IO_PENDING, for example ERROR_BROKEN_PIPE(109).  The event
   //    state is unchanged.
-  DWORD err = ERROR_SUCCESS;
+  auto rc = ResultCode::OK;
   DWORD count;
   if (!ReadFile(handle_, cursor_, read_size_, &count, &overlapped_)) {
-    err = GetLastError();
+    rc = ErrorToResultCode(GetLastError());
   }
 
-  return err;
+  return rc;
 }
 
-DWORD AgentWin::Connection::OnReadFile(BOOL done_reading, DWORD count) {
+ResultCode AgentWin::Connection::OnReadFile(BOOL done_reading, DWORD count) {
   final_size_ += count;
 
   // If `done_reading` is TRUE, this means the full message has been read.
@@ -246,17 +257,17 @@ DWORD AgentWin::Connection::OnReadFile(BOOL done_reading, DWORD count) {
     cursor_ = buffer_.data() + buffer_.size() - read_size_;
   }
 
-  return err;
+  return ErrorToResultCode(err);
 }
 
-DWORD AgentWin::Connection::CallHandler() {
+ResultCode AgentWin::Connection::CallHandler() {
   ChromeToAgent message;
   if (!message.ParseFromArray(buffer_.data(), final_size_)) {
     // Malformed message.
-    return ERROR_INVALID_DATA;
+    return ResultCode::ERR_INVALID_REQUEST_FROM_BROWSER;
   }
 
-  DWORD err = ERROR_SUCCESS;
+  auto rc = ResultCode::OK;
 
   if (message.has_request()) {
     // This is a request from Google Chrome to perform a content analysis
@@ -267,9 +278,12 @@ DWORD AgentWin::Connection::CallHandler() {
     // ownership of the event.
     auto event = std::make_unique<ContentAnalysisEventWin>(
         handle_, browser_info_, std::move(*message.mutable_request()));
-    err = event->Init();
-    if (err == ERROR_SUCCESS) {
+    rc = event->Init();
+    if (rc == ResultCode::OK) {
       handler_->OnAnalysisRequested(std::move(event));
+    } else {
+      // Malformed message.
+      rc = ResultCode::ERR_INVALID_REQUEST_FROM_BROWSER;
     }
   } else if (message.has_ack()) {
     // This is an ack from Google Chrome that it has received a content
@@ -277,42 +291,45 @@ DWORD AgentWin::Connection::CallHandler() {
     handler_->OnResponseAcknowledged(message.ack());
   } else {
     // Malformed message.
-    err = ERROR_INVALID_DATA;
+    rc = ResultCode::ERR_INVALID_REQUEST_FROM_BROWSER;
   }
 
-  return err;
+  return rc;
 }
 
-DWORD AgentWin::Connection::BuildBrowserInfo() {
+ResultCode AgentWin::Connection::BuildBrowserInfo() {
   if (!GetNamedPipeClientProcessId(handle_, &browser_info_.pid)) {
-    return GetLastError();
+    return ResultCode::ERR_CANNOT_GET_BROWSER_PID;
   }
 
   HANDLE hProc = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE,
       browser_info_.pid);
   if (hProc == nullptr) {
-    return GetLastError();
+    return ResultCode::ERR_CANNOT_OPEN_BROWSER_PROCESS;
   }
   
-  DWORD err = ERROR_SUCCESS;
+  auto rc = ResultCode::OK;
   char path[MAX_PATH];
   DWORD size = sizeof(path);
   DWORD length = QueryFullProcessImageNameA(hProc, /*flags=*/0, path, &size);
   if (length == 0) {
-    err = GetLastError();
+    rc = ResultCode::ERR_CANNOT_GET_BROWSER_BINARY_PATH;
   }
 
   CloseHandle(hProc);
 
   browser_info_.binary_path = path;
-  return err;
+  return rc;
 }
 
 AgentWin::AgentWin(
     Config config,
-    std::unique_ptr<AgentEventHandler> event_handler)
+    std::unique_ptr<AgentEventHandler> event_handler,
+    ResultCode* rc)
   : AgentBase(std::move(config), std::move(event_handler)) {
+  *rc = ResultCode::OK;
   if (handler() == nullptr) {
+    *rc = ResultCode::ERR_AGENT_EVENT_HANDLER_NOT_SPECIFIED;
     return;
   }
 
@@ -321,22 +338,25 @@ AgentWin::AgentWin(
                             /*initialState=*/FALSE,
                             /*name=*/nullptr);
   if (stop_event_ == nullptr) {
+    *rc = ResultCode::ERR_CANNOT_CREATE_AGENT_STOP_EVENT;
     return;
   }
 
   std::string pipename =
       internal::GetPipeName(configuration().name,
                             configuration().user_specific);
-  if (pipename.empty())
+  if (pipename.empty()) {
+    *rc = ResultCode::ERR_INVALID_CHANNEL_NAME;
     return;
+  }
 
   pipename_ = pipename;
 
   connections_.reserve(kMinNumListeningPipeInstances);
   for (int i = 0; i < kMinNumListeningPipeInstances; ++i) {
     connections_.emplace_back(
-        std::make_unique<Connection>(pipename_, handler(), i == 0));
-    if (!connections_.back()->IsValid()) {
+        std::make_unique<Connection>(pipename_, handler(), i == 0, rc));
+    if (*rc != ResultCode::OK || !connections_.back()->IsValid()) {
       Shutdown();
       break;
     }
@@ -347,16 +367,18 @@ AgentWin::~AgentWin() {
   Shutdown();
 }
 
-void AgentWin::HandleEvents() {
+ResultCode AgentWin::HandleEvents() {
   std::vector<HANDLE> wait_handles;
-  DWORD err = ERROR_SUCCESS;
+  auto rc = ResultCode::OK;
   bool stopped = false;
-  while (!stopped && err == ERROR_SUCCESS) {
-    err = HandleOneEvent(wait_handles, &stopped);
+  while (!stopped && rc == ResultCode::OK) {
+    rc = HandleOneEvent(wait_handles, &stopped);
   }
+
+  return rc;
 }
 
-int AgentWin::Stop() {
+ResultCode AgentWin::Stop() {
   SetEvent(stop_event_);
   return AgentBase::Stop();
 }
@@ -381,7 +403,7 @@ void AgentWin::GetHandles(std::vector<HANDLE>& wait_handles) const {
   wait_handles.push_back(stop_event_);
 }
 
-DWORD AgentWin::HandleOneEventForTesting() {
+ResultCode AgentWin::HandleOneEventForTesting() {
   std::vector<HANDLE> wait_handles;
   bool stopped;
   return HandleOneEvent(wait_handles, &stopped);
@@ -396,20 +418,20 @@ bool AgentWin::IsAClientConnectedForTesting() {
   return false;
 }
 
-DWORD AgentWin::HandleOneEvent(std::vector<HANDLE>& wait_handles, bool* stopped) {
+ResultCode AgentWin::HandleOneEvent(std::vector<HANDLE>& wait_handles, bool* stopped) {
   *stopped = false;
 
   // Wait on the specified handles for an event to occur.
   GetHandles(wait_handles);
   if (wait_handles.size() < kMinNumWaitHandles) {
-    return ERROR_INVALID_HANDLE;
+    return ResultCode::ERR_AGENT_NOT_INITIALIZED;
   }
 
   DWORD index = WaitForMultipleObjects(
       wait_handles.size(), wait_handles.data(),
       /*waitAll=*/FALSE, /*timeoutMs=*/INFINITE);
   if (index == WAIT_FAILED) {
-    return GetLastError();
+    return ErrorToResultCode(GetLastError());
   }
 
   // If the index of signaled handle is the last one in wait_handles, then the
@@ -417,13 +439,13 @@ DWORD AgentWin::HandleOneEvent(std::vector<HANDLE>& wait_handles, bool* stopped)
   index -= WAIT_OBJECT_0;
   if (index == wait_handles.size() - 1) {
     *stopped = true;
-    return ERROR_SUCCESS;
+    return ResultCode::OK;
   }
 
   auto& connection = connections_[index];
   bool was_listening = !connection->IsConnected();
-  DWORD err = connection->HandleEvent(wait_handles[index]);
-  if (err != ERROR_SUCCESS) {
+  auto rc = connection->HandleEvent(wait_handles[index]);
+  if (rc != ResultCode::OK) {
     // If `connection` was not listening and there are more than
     // kNumPipeInstances pipes, delete this connection.  Otherwise
     // reset it so that it becomes a listener.
@@ -431,18 +453,18 @@ DWORD AgentWin::HandleOneEvent(std::vector<HANDLE>& wait_handles, bool* stopped)
       connections_.size() > kMinNumListeningPipeInstances) {
       connections_.erase(connections_.begin() + index);
     } else {
-      err = connection->Reset(pipename_);
+      rc = connection->Reset(pipename_);
     }
   }
 
   // If `connection` was listening and is now connected, create a new
   // one so that there are always kNumPipeInstances listening.
-  if (err == ERROR_SUCCESS && was_listening && connection->IsConnected()) {
+  if (rc == ResultCode::OK && was_listening && connection->IsConnected()) {
     connections_.emplace_back(
-        std::make_unique<Connection>(pipename_, handler(), false));
+        std::make_unique<Connection>(pipename_, handler(), false, &rc));
   }
 
-  return ERROR_SUCCESS;
+  return ResultCode::OK;
 }
 
 void AgentWin::Shutdown() {

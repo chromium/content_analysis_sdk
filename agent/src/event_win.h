@@ -22,11 +22,11 @@ class ContentAnalysisEventWin : public ContentAnalysisEventBase {
 
   // Initialize the event.  This involves reading the request from Google
   // Chrome and making sure it is well formed.
-  DWORD Init();
+  ResultCode Init();
 
   // ContentAnalysisEvent:
-  int Close() override;
-  int Send() override;
+  ResultCode Close() override;
+  ResultCode Send() override;
 
  private:
   void Shutdown();

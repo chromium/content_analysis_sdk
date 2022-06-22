@@ -61,16 +61,24 @@ class QueuingHandler : public Handler {
 };
 
 int main(int argc, char* argv[]) {
-  // Each agent uses a unique URI to identify itself with Google Chrome.
+  // Each agent uses a unique name to identify itself with Google Chrome.
+  content_analysis::sdk::ResultCode rc;
   auto agent = content_analysis::sdk::Agent::Create({"content_analysis_sdk"},
-      std::make_unique<QueuingHandler>());
-  if (!agent) {
-    std::cout << "[Demo] Error starting agent" << std::endl;
+      std::make_unique<QueuingHandler>(), &rc);
+  if (!agent || rc != content_analysis::sdk::ResultCode::OK) {
+    std::cout << "[Demo] Error starting agent: "
+              << content_analysis::sdk::ResultCodeToString(rc)
+              << std::endl;
     return 1;
   };
 
   // Blocks, sending events to the handler until agent->Stop() is called.
-  agent->HandleEvents();
+  rc = agent->HandleEvents();
+  if (rc != content_analysis::sdk::ResultCode::OK) {
+    std::cout << "[Demo] Error from handling events: "
+              << content_analysis::sdk::ResultCodeToString(rc)
+              << std::endl;
+  }
 
   return 0;
 };
