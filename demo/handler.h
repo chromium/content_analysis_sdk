@@ -124,6 +124,9 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
       case content_analysis::sdk::PRINT:
         connector = "print";
         break;
+      case content_analysis::sdk::FILE_TRANSFER:
+        connector = "file-transfer";
+        break;
       default:
         break;
       }
