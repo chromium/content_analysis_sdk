@@ -57,12 +57,12 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
       std::cout << "  Verdict: failed to reach verdict" << std::endl;
     } else if (block) {
       auto rc = content_analysis::sdk::SetEventVerdictToBlock(event.get());
-      std::cout << "  Verdict: block" << std::endl;
+      std::cout << "  Verdict: block";
       if (rc != content_analysis::sdk::ResultCode::OK) {
         std::cout << " error: "
                   << content_analysis::sdk::ResultCodeToString(rc);
       }
-      std::cout << "  Verdict: block" << std::endl;
+      std::cout << std::endl;
     } else {
       std::cout << "  Verdict: allow" << std::endl;
     }
