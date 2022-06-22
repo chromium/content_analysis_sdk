@@ -37,6 +37,7 @@ enum AnalysisConnector {
   FILE_ATTACHED = 2;
   BULK_DATA_ENTRY = 3;
   PRINT = 4;
+  // This value is not yet implemented in the SDK. It is kept for consistency with the Chromium code.
   FILE_TRANSFER = 5;
 }
 
