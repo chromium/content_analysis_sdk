@@ -54,7 +54,7 @@ AgentWin::Connection::Connection(const std::string& pipename,
     return;
   }
 
-  ResetInternal(pipename, is_first_pipe);
+  *rc = ResetInternal(pipename, is_first_pipe);
 }
 
 AgentWin::Connection::~Connection() {

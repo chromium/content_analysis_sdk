@@ -91,7 +91,7 @@ ResultCode ContentAnalysisEventWin::Close() {
 
 ResultCode ContentAnalysisEventWin::Send() {
   if (response_sent_) {
-    return ResultCode::ERR_RESPONSE_ALRREADY_SENT;
+    return ResultCode::ERR_RESPONSE_ALREADY_SENT;
   }
 
   response_sent_ = true;

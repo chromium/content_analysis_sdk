@@ -17,11 +17,22 @@ ResultCode ErrorToResultCode(DWORD err) {
   ERR_TO_RC(ERROR_MORE_DATA, ERR_MORE_DATA);
   ERR_TO_RC(ERROR_IO_PENDING, ERR_IO_PENDING);
   ERR_TO_RC(ERROR_ACCESS_DENIED, ERR_AGENT_ALREADY_EXISTS);
+  ERR_TO_RC(ERROR_INVALID_NAME, ERR_INVALID_CHANNEL_NAME);
   default:
     return ResultCode::ERR_UNEXPECTED;
   }
 }
 
+#define RC_RECOVERABLE(RC, MSG) case ResultCode::RC: return MSG;
+#define RC_UNRECOVERABLE(RC, MSG) case ResultCode::RC: return MSG;
+const char* ResultCodeToString(ResultCode rc) {
+  switch (rc) {
+#include "content_analysis/sdk/result_codes.inc"
+  }
+  return "Unknown error code.";
+}
+#undef RC_RECOVERABLE
+#undef RC_UNRECOVERABLE
 
 }  // namespace sdk
 }  // namespace content_analysis

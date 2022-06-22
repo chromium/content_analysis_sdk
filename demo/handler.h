@@ -56,7 +56,12 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
           content_analysis::sdk::ContentAnalysisResponse::Result::FAILURE);
       std::cout << "  Verdict: failed to reach verdict" << std::endl;
     } else if (block) {
-      content_analysis::sdk::SetEventVerdictToBlock(event.get());
+      auto rc = content_analysis::sdk::SetEventVerdictToBlock(event.get());
+      std::cout << "  Verdict: block" << std::endl;
+      if (rc != content_analysis::sdk::ResultCode::OK) {
+        std::cout << " error: "
+                  << content_analysis::sdk::ResultCodeToString(rc);
+      }
       std::cout << "  Verdict: block" << std::endl;
     } else {
       std::cout << "  Verdict: allow" << std::endl;
@@ -65,8 +70,11 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
     std::cout << std::endl;
 
     // Send the response back to Google Chrome.
-    if (event->Send() != content_analysis::sdk::ResultCode::OK) {
-      std::cout << "[Demo] Error sending response" << std::endl;
+    auto rc = event->Send();
+    if (rc != content_analysis::sdk::ResultCode::OK) {
+      std::cout << "[Demo] Error sending response: "
+                << content_analysis::sdk::ResultCodeToString(rc)
+                << std::endl;
     }
   }
 

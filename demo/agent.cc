@@ -15,12 +15,19 @@ int main(int argc, char* argv[]) {
   auto agent = content_analysis::sdk::Agent::Create({"content_analysis_sdk"},
       std::make_unique<Handler>(), &rc);
   if (!agent || rc != content_analysis::sdk::ResultCode::OK) {
-    std::cout << "[Demo] Error starting agent" << std::endl;
+    std::cout << "[Demo] Error starting agent: "
+              << content_analysis::sdk::ResultCodeToString(rc)
+              << std::endl;
     return 1;
   };
 
   // Blocks, sending events to the handler until agent->Stop() is called.
-  agent->HandleEvents();
+  rc = agent->HandleEvents();
+  if (rc != content_analysis::sdk::ResultCode::OK) {
+    std::cout << "[Demo] Error from handling events: "
+              << content_analysis::sdk::ResultCodeToString(rc)
+              << std::endl;
+  }
 
   return 0;
 };
