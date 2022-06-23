@@ -54,13 +54,15 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
           event->GetResponse(),
           std::string(),
           content_analysis::sdk::ContentAnalysisResponse::Result::FAILURE);
-      std::cout << "  Verdict: failed to reach verdict" << std::endl;
+      std::cout << "  Verdict: failed to reach verdict: ";
+      std::cout << event->DebugString() << std::endl;
     } else if (block) {
       auto rc = content_analysis::sdk::SetEventVerdictToBlock(event.get());
       std::cout << "  Verdict: block";
       if (rc != content_analysis::sdk::ResultCode::OK) {
         std::cout << " error: "
-                  << content_analysis::sdk::ResultCodeToString(rc);
+                  << content_analysis::sdk::ResultCodeToString(rc) << std::endl;
+        std::cout << "  " << event->DebugString() << std::endl;
       }
       std::cout << std::endl;
     } else {
@@ -75,6 +77,7 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
       std::cout << "[Demo] Error sending response: "
                 << content_analysis::sdk::ResultCodeToString(rc)
                 << std::endl;
+      std::cout << event->DebugString() << std::endl;
     }
   }
 

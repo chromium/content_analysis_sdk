@@ -18,5 +18,9 @@ ResultCode ContentAnalysisEventPosix::Send() {
   return ResultCode::ERR_UNEXPECTED;
 }
 
+std::string ContentAnalysisEventPosix::DebugString() const {
+  return std::string();
+}
+
 }  // namespace sdk
 }  // namespace content_analysis

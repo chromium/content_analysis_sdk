@@ -15,7 +15,7 @@ class ContentAnalysisEventBase : public ContentAnalysisEvent {
  public:
    // ContentAnalysisEvent:
   ResultCode Close() override;
-  const BrowserInfo& GetBrowserInfo() override { return browser_info_; };
+  const BrowserInfo& GetBrowserInfo() const override { return browser_info_; };
   const ContentAnalysisRequest& GetRequest() const override { return request_; }
   ContentAnalysisResponse& GetResponse() override { return *response(); }
 

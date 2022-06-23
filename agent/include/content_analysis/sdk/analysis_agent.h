@@ -43,7 +43,7 @@ namespace sdk {
 // Represents information about one instance of a Google Chrome browser
 // process that is connected to the agent.
 struct BrowserInfo {
-  unsigned long pid;  // Process of Google Chrome browser process.
+  unsigned long pid = 0;  // Process of Google Chrome browser process.
   std::string binary_path;  // The full path to the process's main binary.
 };
 
@@ -77,7 +77,7 @@ class ContentAnalysisEvent {
 
   // Retrives information about the browser that generated this content
   // analysis event.
-  virtual const BrowserInfo& GetBrowserInfo() = 0;
+  virtual const BrowserInfo& GetBrowserInfo() const = 0;
 
   // Retrieves a read-only reference to the content analysis request received
   // from Google Chrome.
@@ -91,6 +91,10 @@ class ContentAnalysisEvent {
   // Send the verdict to Google Chrome.  Once this method is called further
   // changes to the response are ignored.
   virtual ResultCode Send() = 0;
+
+  // Returns a string containing internal state of the object that is useful
+  // for debugging.
+  virtual std::string DebugString() const = 0;
 
  protected:
   ContentAnalysisEvent() = default;
@@ -191,6 +195,10 @@ class Agent {
   // HandleEvents() will return.  It is safe to call this method from any
   // thread.
   virtual ResultCode Stop() = 0;
+
+  // Returns a string containing internal state of the object that is useful
+  // for debugging.
+  virtual std::string DebugString() const = 0;
 
  protected:
   Agent() = default;

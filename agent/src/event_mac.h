@@ -18,6 +18,7 @@ class ContentAnalysisEventMac : public ContentAnalysisEventBase {
 
   // ContentAnalysisEvent:
   ResultCode Send() override;
+  std::string DebugString() const override;
 
   // TODO(rogerta): Fill in implementation.
 };

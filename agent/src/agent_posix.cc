@@ -28,5 +28,9 @@ ResultCode AgentPosix::HandleEvents() {
   return ResultCode::ERR_UNEXPECTED;
 }
 
+std::string AgentPosix::DebugString() const {
+  return std::string();
+}
+
 }  // namespace sdk
 }  // namespace content_analysis

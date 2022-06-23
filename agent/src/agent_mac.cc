@@ -26,5 +26,9 @@ ResultCode AgentMac::HandleEvents() {
   return ResultCode::ERR_UNEXPECTED;
 }
 
+std::string AgentMac::DebugString() const {
+  return std::string();
+}
+
 }  // namespace sdk
 }  // namespace content_analysis

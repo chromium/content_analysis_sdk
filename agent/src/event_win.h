@@ -27,6 +27,7 @@ class ContentAnalysisEventWin : public ContentAnalysisEventBase {
   // ContentAnalysisEvent:
   ResultCode Close() override;
   ResultCode Send() override;
+  std::string DebugString() const override;
 
  private:
   void Shutdown();

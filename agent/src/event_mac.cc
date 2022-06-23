@@ -18,5 +18,9 @@ ResultCode ContentAnalysisEventMac::Send() {
   return ResultCode::ERR_UNEXPECTED;
 }
 
+std::string ContentAnalysisEventMac::DebugString() const {
+  return std::string();
+}
+
 }  // namespace sdk
 }  // namespace content_analysis
