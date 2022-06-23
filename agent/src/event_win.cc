@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <ios>
 #include <sstream>
 #include <utility>
 
@@ -104,12 +105,11 @@ ResultCode ContentAnalysisEventWin::Send() {
 
 std::string ContentAnalysisEventWin::DebugString() const {
   std::stringstream state;
+  state.setf(std::ios::boolalpha);
   state << "ContentAnalysisEventWin{handle=" << hPipe_;
   state << " pid=" << GetBrowserInfo().pid;
   state << " rtoken=" << GetRequest().request_token();
-  if (response_sent_) {
-    state << " sent";
-  }
+  state << " sent="  << response_sent_;
   state << "}" << std::ends;
 
   return state.str();

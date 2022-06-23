@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <ios>
 #include <utility>
 #include <vector>
 
@@ -131,9 +132,7 @@ ResultCode AgentWin::Connection::HandleEvent(HANDLE handle) {
 
 void AgentWin::Connection::AppendDebugString(std::stringstream& state) const {
   state << "{handle=" << handle_;
-  if (is_connected_) {
-    state << " connected";
-  }
+  state << " connected=" << is_connected_;
   state << " pid=" << browser_info_.pid;
   state << " rsize=" << read_size_;
   state << " fsize=" << final_size_;
@@ -396,6 +395,7 @@ ResultCode AgentWin::Stop() {
 
 std::string AgentWin::DebugString() const {
   std::stringstream state;
+  state.setf(std::ios::boolalpha);
   state << "AgentWin{pipe=\"" << pipename_;
   state << "\" stop=" << stop_event_;
 
