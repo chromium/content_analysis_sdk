@@ -15,7 +15,7 @@ class AgentPosix : public AgentBase {
  public:
   AgentPosix(Config config, std::unique_ptr<AgentEventHandler> handler);
 
-  void HandleEvents() override;
+  ResultCode HandleEvents() override;
   std::string DebugString() const override;
 
   // TODO(rogerta): Fill in implementation.

@@ -20,5 +20,16 @@ ResultCode AgentBase::Stop() {
   return ResultCode::OK;
 }
 
+#define RC_RECOVERABLE(RC, MSG) case ResultCode::RC: return MSG;
+#define RC_UNRECOVERABLE(RC, MSG) case ResultCode::RC: return MSG;
+const char* ResultCodeToString(ResultCode rc) {
+  switch (rc) {
+#include "content_analysis/sdk/result_codes.inc"
+  }
+  return "Unknown error code.";
+}
+#undef RC_RECOVERABLE
+#undef RC_UNRECOVERABLE
+
 }  // namespace sdk
 }  // namespace content_analysis
