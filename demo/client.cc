@@ -105,10 +105,10 @@ ContentAnalysisRequest BuildRequest(const std::string& data) {
     request_data->set_filename(filename);
   }
 
-  if (!data.empty()) {
-    request.set_text_content(data);
-  } else if (!filepath.empty()) {
+  if (!filepath.empty()) {
     request.set_file_path(filepath);
+  } else if (!data.empty()) {
+    request.set_text_content(data);
   } else {
     std::cout << "[Demo] Specify text content or a file path." << std::endl;
     PrintHelp();
