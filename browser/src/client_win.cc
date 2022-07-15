@@ -18,18 +18,25 @@ const DWORD kBufferSize = 4096;
 
 // static
 std::unique_ptr<Client> Client::Create(Config config) {
-  return std::make_unique<ClientWin>(std::move(config));
+  int rc;
+  auto client = std::make_unique<ClientWin>(std::move(config), &rc);
+  return rc == 0 ? std::move(client) : nullptr;
 }
 
-ClientWin::ClientWin(Config config) : ClientBase(std::move(config)) {
+ClientWin::ClientWin(Config config, int* rc) : ClientBase(std::move(config)) {
+  *rc = -1;
+
   std::string pipename =
     internal::GetPipeName(configuration().name, configuration().user_specific);
-  if (pipename.empty())
+  if (pipename.empty()) {
     return;
+  }
 
   pipename_ = pipename;
   if (ConnectToPipe(pipename_, &hPipe_) != ERROR_SUCCESS) {
     Shutdown();
+  } else {
+    *rc = 0;
   }
 }
 

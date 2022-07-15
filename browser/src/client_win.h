@@ -15,7 +15,7 @@ namespace sdk {
 // Client implementaton for Windows.
 class ClientWin : public ClientBase {
  public:
-   ClientWin(Config config);
+   ClientWin(Config config, int* rc);
    ~ClientWin() override;
 
   // Client:

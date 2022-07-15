@@ -28,9 +28,18 @@ std::string GetUserSID();
 std::string GetPipeName(const std::string& base, bool user_specific);
 
 // Creates a named pipe with the give name.  If `is_first_pipe` is true,
-// fail if this is not the first pipe using this name.  A handle to the
-// pipe is retuned in `handle`.
-DWORD CreatePipe(const std::string& name,bool is_first_pipe,HANDLE* handle);
+// fail if this is not the first pipe using this name.
+//
+// This function create a pipe whose DACL allow full control to the creator
+// owner and administrators.  If `user_specific` the DACL only allows the
+// logged on user to read from and write to the pipe.  Otherwise anyone logged
+// in can read from and write to the pipe.
+//
+// A handle to the pipe is retuned in `handle`.
+DWORD CreatePipe(const std::string& name,
+                 bool user_specific,
+                 bool is_first_pipe,
+                 HANDLE* handle);
 
 }  // internal
 }  // namespace sdk

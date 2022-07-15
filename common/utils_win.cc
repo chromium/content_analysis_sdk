@@ -59,10 +59,42 @@ std::string GetPipeName(const std::string& base, bool user_specific) {
 
 DWORD CreatePipe(
     const std::string& name,
+    bool user_specific,
     bool is_first_pipe,
     HANDLE* handle) {
   DWORD err = ERROR_SUCCESS;
   DWORD mode = PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED;
+
+  // Create DACL for pipe to allow users on the local system to read and write
+  // to the pipe.  The creator and owner as well as administrator always get
+  // full control of the pipe.
+  //
+  // If `user_specific` is true, a different agent instance is used for each
+  // OS user, so only allow the interactive logged on user to reads and write
+  // messages to the pipe.  Otherwise only one agent instance used used for all
+  // OS users and all authenticated logged on users can reads and write
+  // messages.
+  //
+  // See https://docs.microsoft.com/en-us/windows/win32/secauthz/security-descriptor-definition-language
+  // for a description of this string format.
+  const char* kDaclEveryone = "D:"
+      "(A;OICI;GA;;;CO)"     // Allow full control to creator owner.
+      "(A;OICI;GA;;;BA)"     // Allow full control to admins.
+      "(A;OICI;GRGW;;;WD)";  // Allow read and write to everyone.
+  const char* kDaclUserSpecific = "D:"
+      "(A;OICI;GA;;;CO)"     // Allow full control to creator owner.
+      "(A;OICI;GA;;;BA)"     // Allow full control to admins.
+      "(A;OICI;GRGW;;;IU)";  // Allow read and write to interactive user.
+  SECURITY_ATTRIBUTES sa;
+  memset(&sa, 0, sizeof(sa));
+  sa.nLength = sizeof(sa);
+  sa.bInheritHandle = FALSE;
+  if (!ConvertStringSecurityDescriptorToSecurityDescriptorA(
+      user_specific ? kDaclUserSpecific : kDaclEveryone, SDDL_REVISION_1,
+      &sa.lpSecurityDescriptor, /*outSdSize=*/nullptr)) {
+    err = GetLastError();
+    return err;
+  }
 
   // When `is_first_pipe` is true, the agent expects there is no process that
   // is currently listening on this pipe.  If there is, CreateNamedPipeA()
@@ -74,10 +106,12 @@ DWORD CreatePipe(
   *handle = CreateNamedPipeA(name.c_str(), mode,
     PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT |
     PIPE_REJECT_REMOTE_CLIENTS, PIPE_UNLIMITED_INSTANCES, kBufferSize,
-    kBufferSize, 0, /*securityAttr=*/nullptr);
+    kBufferSize, 0, &sa);
   if (*handle == INVALID_HANDLE_VALUE) {
     err = GetLastError();
   }
+
+  LocalFree(sa.lpSecurityDescriptor);
 
   return err;
 }
