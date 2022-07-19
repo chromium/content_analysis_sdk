@@ -77,11 +77,11 @@ DWORD CreatePipe(
   //
   // See https://docs.microsoft.com/en-us/windows/win32/secauthz/security-descriptor-definition-language
   // for a description of this string format.
-  const char* kDaclEveryone = "D:"
+  constexpr char* kDaclEveryone = "D:"
       "(A;OICI;GA;;;CO)"     // Allow full control to creator owner.
       "(A;OICI;GA;;;BA)"     // Allow full control to admins.
       "(A;OICI;GRGW;;;WD)";  // Allow read and write to everyone.
-  const char* kDaclUserSpecific = "D:"
+  constexpr char* kDaclUserSpecific = "D:"
       "(A;OICI;GA;;;CO)"     // Allow full control to creator owner.
       "(A;OICI;GA;;;BA)"     // Allow full control to admins.
       "(A;OICI;GRGW;;;IU)";  // Allow read and write to interactive user.
@@ -111,6 +111,8 @@ DWORD CreatePipe(
     err = GetLastError();
   }
 
+  // Free the security descriptor as it is no longer needed once
+  // CreateNamedPipeA() returns.
   LocalFree(sa.lpSecurityDescriptor);
 
   return err;
