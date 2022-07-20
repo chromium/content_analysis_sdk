@@ -367,7 +367,7 @@ AgentWin::AgentWin(
   pipename_ = pipename;
 
   connections_.reserve(kMinNumListeningPipeInstances);
-  for (int i = 0; i < kMinNumListeningPipeInstances; ++i) {
+  for (DWORD i = 0; i < kMinNumListeningPipeInstances; ++i) {
     connections_.emplace_back(
         std::make_unique<Connection>(pipename_, configuration().user_specific,
                                      handler(), i == 0, rc));
