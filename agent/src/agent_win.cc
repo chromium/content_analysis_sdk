@@ -37,6 +37,7 @@ std::unique_ptr<Agent> Agent::Create(
 }
 
 AgentWin::Connection::Connection(const std::string& pipename,
+                                 bool user_specific,
                                  AgentEventHandler* handler,
                                  bool is_first_pipe,
                                  ResultCode* rc)
@@ -55,7 +56,7 @@ AgentWin::Connection::Connection(const std::string& pipename,
     return;
   }
 
-  *rc = ResetInternal(pipename, is_first_pipe);
+  *rc = ResetInternal(pipename, user_specific, is_first_pipe);
 }
 
 AgentWin::Connection::~Connection() {
@@ -71,8 +72,10 @@ AgentWin::Connection::~Connection() {
   }
 }
 
-ResultCode AgentWin::Connection::Reset(const std::string& pipename) {
-  return ResetInternal(pipename, false);
+ResultCode AgentWin::Connection::Reset(
+    const std::string& pipename,
+    bool user_specific) {
+  return ResetInternal(pipename, user_specific, false);
 }
 
 ResultCode AgentWin::Connection::HandleEvent(HANDLE handle) {
@@ -163,6 +166,7 @@ ResultCode AgentWin::Connection::ConnectPipe() {
 }
 
 ResultCode AgentWin::Connection::ResetInternal(const std::string& pipename,
+                                               bool user_specific,
                                                bool is_first_pipe) {
   auto rc = ResultCode::OK;
 
@@ -174,7 +178,7 @@ ResultCode AgentWin::Connection::ResetInternal(const std::string& pipename,
     }
   } else {
     rc = ErrorToResultCode(
-        internal::CreatePipe(pipename, is_first_pipe, &handle_));
+        internal::CreatePipe(pipename, user_specific, is_first_pipe, &handle_));
   }
 
   // Make sure event starts in reset state.
@@ -365,7 +369,8 @@ AgentWin::AgentWin(
   connections_.reserve(kMinNumListeningPipeInstances);
   for (int i = 0; i < kMinNumListeningPipeInstances; ++i) {
     connections_.emplace_back(
-        std::make_unique<Connection>(pipename_, handler(), i == 0, rc));
+        std::make_unique<Connection>(pipename_, configuration().user_specific,
+                                     handler(), i == 0, rc));
     if (*rc != ResultCode::OK || !connections_.back()->IsValid()) {
       Shutdown();
       break;
@@ -478,7 +483,7 @@ ResultCode AgentWin::HandleOneEvent(std::vector<HANDLE>& wait_handles, bool* sto
       connections_.size() > kMinNumListeningPipeInstances) {
       connections_.erase(connections_.begin() + index);
     } else {
-      rc = connection->Reset(pipename_);
+      rc = connection->Reset(pipename_, configuration().user_specific);
     }
   }
 
@@ -486,7 +491,8 @@ ResultCode AgentWin::HandleOneEvent(std::vector<HANDLE>& wait_handles, bool* sto
   // one so that there are always kNumPipeInstances listening.
   if (rc == ResultCode::OK && was_listening && connection->IsConnected()) {
     connections_.emplace_back(
-        std::make_unique<Connection>(pipename_, handler(), false, &rc));
+        std::make_unique<Connection>(pipename_, configuration().user_specific,
+                                     handler(), false, &rc));
   }
 
   return ResultCode::OK;

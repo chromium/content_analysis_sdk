@@ -112,8 +112,10 @@ std::unique_ptr<AgentWin> CreateAgent(
 }
 
 std::unique_ptr<ClientWin> CreateClient(
-  Client::Config config) {
-  return std::make_unique<ClientWin>(std::move(config));
+    Client::Config config) {
+  int rc;
+  auto client = std::make_unique<ClientWin>(std::move(config), &rc);
+  return rc == 0 ? std::move(client) : nullptr;
 }
 
 ContentAnalysisRequest BuildRequest(std::string content=std::string()) {
@@ -209,6 +211,39 @@ TEST(AgentTest, ConnectAndStop) {
   agent->HandleEvents();
 
   stop_client.count_down();
+  client_thread.join();
+  stop_agent.join();
+}
+
+TEST(AgentTest, Connect_UserSpecific) {
+  ResultCode rc;
+  auto handler = std::make_unique<SignalClientConnectedTestHandler>();
+  auto* handler_ptr = handler.get();
+  auto agent = std::make_unique<AgentWin>(
+    Agent::Config{ "test", true }, std::move(handler), &rc);
+  ASSERT_TRUE(agent);
+  ASSERT_EQ(ResultCode::OK, rc);
+
+  // Create a thread to handle the client.  Since the client is sync, it can't
+  // run in the same thread as the agent.
+  std::thread client_thread([]() {
+    // If the user_specific does not match the agent, the client should not
+    // connect.
+    auto client = CreateClient({ "test", false });
+    ASSERT_FALSE(client);
+
+    auto client2 = CreateClient({ "test", true });
+    ASSERT_TRUE(client2);
+  });
+
+  // A thread that stops the agent after one client connects.
+  std::thread stop_agent([&handler_ptr, &agent]() {
+    handler_ptr->wait_for_client.wait();
+    agent->Stop();
+  });
+
+  agent->HandleEvents();
+
   client_thread.join();
   stop_agent.join();
 }

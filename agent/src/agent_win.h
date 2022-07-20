@@ -48,10 +48,14 @@ private:
     // occurs while creating the connction object it is returned in `rc`.
     // If no errors occur then rc is set to ResultCode::OK.
     //
+    // When `user_specific` is true there is a different agent instance per OS
+    // user.
+    //
     // `Connection` objects cannot be copied or moved because the OVERLAPPED
     // structure cannot be changed or moved in memory while an I/O operation
     // is in progress.
     Connection(const std::string& pipename,
+               bool user_specific,
                AgentEventHandler* handler,
                bool is_first_pipe,
                ResultCode* rc);
@@ -66,7 +70,9 @@ private:
     HANDLE GetWaitHandle() const { return overlapped_.hEvent; }
 
     // Resets this connection object to listen for a new Google Chrome browser.
-    ResultCode Reset(const std::string& pipename);
+    // When `user_specific` is true there is a different agent instance per OS
+    // user.
+    ResultCode Reset(const std::string& pipename, bool user_specific);
 
     // Hnadles an event for this connection.  `wait_handle` corresponds to
     // this connections wait handle.
@@ -80,7 +86,11 @@ private:
     ResultCode ConnectPipe();
 
     // Resets this connection object to listen for a new Google Chrome browser.
-    ResultCode ResetInternal(const std::string& pipename, bool is_first_pipe);
+    // When `user_specific` is true there is a different agent instance per OS
+    // user.
+    ResultCode ResetInternal(const std::string& pipename,
+                             bool user_specific,
+                             bool is_first_pipe);
 
     // Cleans up this connection object so that it can be reused with a new
     // Google Chroem browser instance.  The handles assocated with this object

@@ -13,6 +13,9 @@ using content_analysis::sdk::ContentAnalysisRequest;
 using content_analysis::sdk::ContentAnalysisResponse;
 using content_analysis::sdk::ContentAnalysisAcknowledgement;
 
+// Global app config.
+bool user_specific = false;
+
 // Paramters used to build the request.
 content_analysis::sdk::AnalysisConnector connector =
     content_analysis::sdk::FILE_ATTACHED;
@@ -28,6 +31,7 @@ constexpr const char* kArgRequestToken = "--request-token=";
 constexpr const char* kArgTag = "--tag=";
 constexpr const char* kArgDigest = "--digest=";
 constexpr const char* kArgUrl = "--url=";
+constexpr const char* kArgUserSpecific = "--user";
 constexpr const char* kArgHelp = "--help";
 
 bool ParseCommandLine(int argc, char* argv[]) {
@@ -57,6 +61,8 @@ bool ParseCommandLine(int argc, char* argv[]) {
       digest = arg.substr(strlen(kArgDigest));
     } else if (arg.find(kArgUrl) == 0) {
       url = arg.substr(strlen(kArgUrl));
+    } else if (arg.find(kArgUserSpecific) == 0) {
+      user_specific = true;
     } else if (arg.find(kArgHelp) == 0) {
       return false;
     } else {
@@ -80,6 +86,7 @@ void PrintHelp() {
     << kArgRequestToken << "<unique-token> : defaults to 'req-12345'" << std::endl
     << kArgTag << "<tag> : defaults to 'dlp'" << std::endl
     << kArgUrl << "<url> : defaults to 'https://upload.example.com'" << std::endl
+    << kArgUserSpecific << " : Connects to an OS user specific agent" << std::endl
     << kArgDigest << "<digest> : defaults to 'sha256-123456'" << std::endl
     << kArgHelp << " : prints this help message" << std::endl;
 }
@@ -211,7 +218,7 @@ int main(int argc, char* argv[]) {
   }
 
   // Each client uses a unique name to identify itself with Google Chrome.
-  auto client = Client::Create({"content_analysis_sdk"});
+  auto client = Client::Create({"content_analysis_sdk", user_specific});
   if (!client) {
     std::cout << "[Demo] Error starting client" << std::endl;
     return 1;
