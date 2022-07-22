@@ -146,6 +146,11 @@ class AgentEventHandler {
   // not need to be overridden.
   virtual void OnResponseAcknowledged(
       const ContentAnalysisAcknowledgement& ack) {}
+
+  // Called whenever the Agent implementation detects an error.  `context`
+  // is a string that provide a hint to the handler as to where the error
+  // happened in the agent.  `error` represent the actual error detected.
+  virtual void OnInternalError(const char* context, ResultCode error) {}
 };
 
 // Represents an agent that can perform content analysis for the Google Chrome

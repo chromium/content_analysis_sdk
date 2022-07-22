@@ -133,6 +133,16 @@ private:
     // IsConnected() is true.
     ResultCode BuildBrowserInfo();
 
+    // Notifies the handler of the given error iff `rc` is not equal to
+    // ResultCode::OK.  Appends the Google Chrome browser process id to the
+    // context before calling the handler.  Also append `err` to the context
+    // if it is not ERROR_SUCCESS.
+    //
+    // Returns the error passed into the method.
+    ResultCode NotifyIfError(const char* context,
+                             ResultCode rc,
+                             DWORD err=ERROR_SUCCESS);
+
     // The handler to call for various agent events.
     AgentEventHandler* handler_ = nullptr;
 
