@@ -25,6 +25,10 @@ class AgentBase : public Agent {
   AgentEventHandler* handler() const { return handler_.get(); }
   const Config& configuration() const { return config_; }
 
+  // Notifies the handler of the given error.  Returns the error
+  // passed into the method.
+  ResultCode NotifyError(const char* context, ResultCode error);
+
  private:
   Config config_;
   std::unique_ptr<AgentEventHandler> handler_;

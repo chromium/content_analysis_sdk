@@ -20,6 +20,13 @@ ResultCode AgentBase::Stop() {
   return ResultCode::OK;
 }
 
+ResultCode AgentBase::NotifyError(const char* context, ResultCode error) {
+  if (handler_) {
+    handler_->OnInternalError(context, error);
+  }
+  return error;
+}
+
 #define RC_RECOVERABLE(RC, MSG) case ResultCode::RC: return MSG;
 #define RC_UNRECOVERABLE(RC, MSG) case ResultCode::RC: return MSG;
 const char* ResultCodeToString(ResultCode rc) {
