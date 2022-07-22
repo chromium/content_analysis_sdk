@@ -9,7 +9,14 @@
 #include "content_analysis/sdk/analysis_agent.h"
 #include "demo/handler.h"
 
+// Different paths are used depending on whether this agent should run as a
+// use specific agent or not.  These values are chosen to match the test
+// values in chrome browser.
+constexpr char kPathTest1[] = "path_test1";
+constexpr char kPathTest2[] = "path_test2";
+
 // Global app config.
+const char* path = kPathTest2;
 bool user_specific = false;
 
 // Command line parameters.
@@ -20,6 +27,7 @@ bool ParseCommandLine(int argc, char* argv[]) {
   for (int i = 1; i < argc; ++i) {
     const std::string arg = argv[i];
     if (arg.find(kArgUserSpecific) == 0) {
+      path = kPathTest1;
       user_specific = true;
     } else if (arg.find(kArgHelp) == 0) {
       return false;
@@ -49,8 +57,7 @@ int main(int argc, char* argv[]) {
   // Each agent uses a unique name to identify itself with Google Chrome.
   content_analysis::sdk::ResultCode rc;
   auto agent = content_analysis::sdk::Agent::Create(
-      {"content_analysis_sdk", user_specific},
-      std::make_unique<Handler>(), &rc);
+      {path, user_specific}, std::make_unique<Handler>(), &rc);
   if (!agent || rc != content_analysis::sdk::ResultCode::OK) {
     std::cout << "[Demo] Error starting agent: "
               << content_analysis::sdk::ResultCodeToString(rc)
