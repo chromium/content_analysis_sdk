@@ -12,6 +12,45 @@
 #include "demo/handler.h"
 #include "demo/request_queue.h"
 
+// Different paths are used depending on whether this agent should run as a
+// use specific agent or not.  These values are chosen to match the test
+// values in chrome browser.
+constexpr char kPathTest1[] = "path_test1";
+constexpr char kPathTest2[] = "path_test2";
+
+// Global app config.
+const char* path = kPathTest2;
+bool user_specific = false;
+
+// Command line parameters.
+constexpr const char* kArgUserSpecific = "--user";
+constexpr const char* kArgHelp = "--help";
+
+bool ParseCommandLine(int argc, char* argv[]) {
+  for (int i = 1; i < argc; ++i) {
+    const std::string arg = argv[i];
+    if (arg.find(kArgUserSpecific) == 0) {
+      path = kPathTest1;
+      user_specific = true;
+    } else if (arg.find(kArgHelp) == 0) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+void PrintHelp() {
+  std::cout
+    << std::endl << std::endl
+    << "Usage: queued_agent [OPTIONS]" << std::endl
+    << "A simple agent to process content analysis requests." << std::endl
+    << "Data containing the string 'block' blocks the request data from being used." << std::endl
+    << std::endl << "Options:"  << std::endl
+    << kArgUserSpecific << " : Make agent OS user specific" << std::endl
+    << kArgHelp << " : prints this help message" << std::endl;
+}
+
 // An AgentEventHandler that dumps requests information to stdout and blocks
 // any requests that have the keyword "block" in their data
 class QueuingHandler : public Handler {
@@ -61,9 +100,14 @@ class QueuingHandler : public Handler {
 };
 
 int main(int argc, char* argv[]) {
+  if (!ParseCommandLine(argc, argv)) {
+    PrintHelp();
+    return 1;
+  }
+
   // Each agent uses a unique name to identify itself with Google Chrome.
   content_analysis::sdk::ResultCode rc;
-  auto agent = content_analysis::sdk::Agent::Create({"content_analysis_sdk"},
+  auto agent = content_analysis::sdk::Agent::Create({path, user_specific},
       std::make_unique<QueuingHandler>(), &rc);
   if (!agent || rc != content_analysis::sdk::ResultCode::OK) {
     std::cout << "[Demo] Error starting agent: "
