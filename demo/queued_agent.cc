@@ -116,6 +116,8 @@ int main(int argc, char* argv[]) {
     return 1;
   };
 
+  std::cout << "[Demo] " << agent->DebugString() << std::endl;
+
   // Blocks, sending events to the handler until agent->Stop() is called.
   rc = agent->HandleEvents();
   if (rc != content_analysis::sdk::ResultCode::OK) {
