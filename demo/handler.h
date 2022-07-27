@@ -109,6 +109,15 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
     std::cout << "Ack: " << ack.request_token() << std::endl;
   }
 
+  void OnInternalError(
+      const char* context,
+      content_analysis::sdk::ResultCode error) override {
+    std::cout << std::endl
+              << "*ERROR*: context=\"" << context << "\" "
+              << content_analysis::sdk::ResultCodeToString(error)
+              << std::endl;
+  }
+
   void DumpRequest(
       const content_analysis::sdk::ContentAnalysisRequest& request) {
     std::string connector = "<Unknown>";
