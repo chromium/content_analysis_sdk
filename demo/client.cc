@@ -16,11 +16,11 @@ using content_analysis::sdk::ContentAnalysisAcknowledgement;
 // Different paths are used depending on whether this agent should run as a
 // use specific agent or not.  These values are chosen to match the test
 // values in chrome browser.
-constexpr char kPathTest1[] = "path_test1";
-constexpr char kPathTest2[] = "path_test2";
+constexpr char kPathUser[] = "path_user";
+constexpr char kPathSystem[] = "path_system";
 
 // Global app config.
-const char* path = kPathTest2;
+const char* path = kPathSystem;
 bool user_specific = false;
 
 // Paramters used to build the request.
@@ -69,7 +69,7 @@ bool ParseCommandLine(int argc, char* argv[]) {
     } else if (arg.find(kArgUrl) == 0) {
       url = arg.substr(strlen(kArgUrl));
     } else if (arg.find(kArgUserSpecific) == 0) {
-      path = kPathTest1;
+      path = kPathUser;
       user_specific = true;
     } else if (arg.find(kArgHelp) == 0) {
       return false;
