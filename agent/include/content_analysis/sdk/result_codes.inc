@@ -14,6 +14,7 @@ RC_RECOVERABLE(ERR_MORE_DATA, "There is more data to read before the entire mess
 RC_RECOVERABLE(ERR_CANNOT_GET_BROWSER_PID, "Cannot get process Id of browser.")
 RC_RECOVERABLE(ERR_CANNOT_OPEN_BROWSER_PROCESS, "Cannot open browser process to extract info.")
 RC_RECOVERABLE(ERR_CANNOT_GET_BROWSER_BINARY_PATH, "Cannot get the full path to the brower's main binary file.")
+RC_RECOVERABLE(ERR_BROKEN_PIPE, "Browser process has disconnected.")
 RC_RECOVERABLE(ERR_UNEXPECTED, "An internal error has occured.")
 
 // All unrecoverable errors should be declared below ERR_FIRST_UNRECOVERABLE_ERROR.

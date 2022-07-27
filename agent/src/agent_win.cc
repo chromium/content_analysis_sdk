@@ -75,7 +75,8 @@ AgentWin::Connection::~Connection() {
 ResultCode AgentWin::Connection::Reset(
     const std::string& pipename,
     bool user_specific) {
-  return ResetInternal(pipename, user_specific, false);
+  return NotifyIfError("ConnectionReset",
+                       ResetInternal(pipename, user_specific, false));
 }
 
 ResultCode AgentWin::Connection::HandleEvent(HANDLE handle) {
@@ -102,6 +103,7 @@ ResultCode AgentWin::Connection::HandleEvent(HANDLE handle) {
       }
     } else {
       rc = ErrorToResultCode(GetLastError());
+      NotifyIfError("GetOverlappedResult", rc);
     }
   } else {
     // Some data has arrived from Google Chrome. This data is (part of) an
@@ -241,7 +243,18 @@ ResultCode AgentWin::Connection::QueueReadFile(bool reset_cursor) {
   auto rc = ResultCode::OK;
   DWORD count;
   if (!ReadFile(handle_, cursor_, read_size_, &count, &overlapped_)) {
-    rc = ErrorToResultCode(GetLastError());
+    DWORD err = GetLastError();
+    rc = ErrorToResultCode(err);
+
+    // IO pending is not an error so don't notify.
+    //
+    // Ignore broken pipes for notifications since that happens when the Google
+    // Chrome browser shuts down.  The agent will be notified of a browser
+    // disconnect in that case.
+    if (rc != ResultCode::ERR_IO_PENDING &&
+        rc != ResultCode::ERR_BROKEN_PIPE) {
+      NotifyIfError("QueueReadFile", rc, err);
+    }
   }
 
   return rc;
@@ -271,14 +284,15 @@ ResultCode AgentWin::Connection::OnReadFile(BOOL done_reading, DWORD count) {
     cursor_ = buffer_.data() + buffer_.size() - read_size_;
   }
 
-  return ErrorToResultCode(err);
+  return NotifyIfError("OnReadFile", ErrorToResultCode(err));
 }
 
 ResultCode AgentWin::Connection::CallHandler() {
   ChromeToAgent message;
   if (!message.ParseFromArray(buffer_.data(), final_size_)) {
     // Malformed message.
-    return ResultCode::ERR_INVALID_REQUEST_FROM_BROWSER;
+    return NotifyIfError("ParseChromeToAgent",
+                         ResultCode::ERR_INVALID_REQUEST_FROM_BROWSER);
   }
 
   auto rc = ResultCode::OK;
@@ -296,8 +310,7 @@ ResultCode AgentWin::Connection::CallHandler() {
     if (rc == ResultCode::OK) {
       handler_->OnAnalysisRequested(std::move(event));
     } else {
-      // Malformed message.
-      rc = ResultCode::ERR_INVALID_REQUEST_FROM_BROWSER;
+      NotifyIfError("RequestValidation", rc);
     }
   } else if (message.has_ack()) {
     // This is an ack from Google Chrome that it has received a content
@@ -305,7 +318,8 @@ ResultCode AgentWin::Connection::CallHandler() {
     handler_->OnResponseAcknowledged(message.ack());
   } else {
     // Malformed message.
-    rc = ResultCode::ERR_INVALID_REQUEST_FROM_BROWSER;
+    rc = NotifyIfError("NoRequestOrAck",
+                       ResultCode::ERR_INVALID_REQUEST_FROM_BROWSER);
   }
 
   return rc;
@@ -313,13 +327,15 @@ ResultCode AgentWin::Connection::CallHandler() {
 
 ResultCode AgentWin::Connection::BuildBrowserInfo() {
   if (!GetNamedPipeClientProcessId(handle_, &browser_info_.pid)) {
-    return ResultCode::ERR_CANNOT_GET_BROWSER_PID;
+    return NotifyIfError("BuildBrowserInfo",
+                         ResultCode::ERR_CANNOT_GET_BROWSER_PID);
   }
 
   HANDLE hProc = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE,
       browser_info_.pid);
   if (hProc == nullptr) {
-    return ResultCode::ERR_CANNOT_OPEN_BROWSER_PROCESS;
+    return NotifyIfError("BuildBrowserInfo",
+                         ResultCode::ERR_CANNOT_OPEN_BROWSER_PROCESS);
   }
   
   auto rc = ResultCode::OK;
@@ -327,12 +343,29 @@ ResultCode AgentWin::Connection::BuildBrowserInfo() {
   DWORD size = sizeof(path);
   DWORD length = QueryFullProcessImageNameA(hProc, /*flags=*/0, path, &size);
   if (length == 0) {
-    rc = ResultCode::ERR_CANNOT_GET_BROWSER_BINARY_PATH;
+    rc = NotifyIfError("BuildBrowserInfo",
+                       ResultCode::ERR_CANNOT_GET_BROWSER_BINARY_PATH);
   }
 
   CloseHandle(hProc);
 
   browser_info_.binary_path = path;
+  return rc;
+}
+
+ResultCode AgentWin::Connection::NotifyIfError(
+    const char* context,
+    ResultCode rc,
+    DWORD err) {
+  if (handler_ && rc != ResultCode::OK) {
+    std::stringstream stm;
+    stm << context << " pid=" << browser_info_.pid;
+    if (err != ERROR_SUCCESS) {
+      stm << context << " err=" << err;
+    }
+
+    handler_->OnInternalError(stm.str().c_str(), rc);
+  }
   return rc;
 }
 
@@ -448,20 +481,23 @@ bool AgentWin::IsAClientConnectedForTesting() {
   return false;
 }
 
-ResultCode AgentWin::HandleOneEvent(std::vector<HANDLE>& wait_handles, bool* stopped) {
+ResultCode AgentWin::HandleOneEvent(
+    std::vector<HANDLE>& wait_handles,
+    bool* stopped) {
   *stopped = false;
 
   // Wait on the specified handles for an event to occur.
   GetHandles(wait_handles);
   if (wait_handles.size() < kMinNumWaitHandles) {
-    return ResultCode::ERR_AGENT_NOT_INITIALIZED;
+    return NotifyError("GetHandles", ResultCode::ERR_AGENT_NOT_INITIALIZED);
   }
 
   DWORD index = WaitForMultipleObjects(
       wait_handles.size(), wait_handles.data(),
       /*waitAll=*/FALSE, /*timeoutMs=*/INFINITE);
   if (index == WAIT_FAILED) {
-    return ErrorToResultCode(GetLastError());
+    return NotifyError("WaitForMultipleObjects",
+                       ErrorToResultCode(GetLastError()));
   }
 
   // If the index of signaled handle is the last one in wait_handles, then the
