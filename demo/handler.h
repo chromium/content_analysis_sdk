@@ -160,12 +160,24 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
         request.has_file_path()
         ? request.file_path() : "None, bulk text entry";
 
+    std::string machine_user =
+        request.has_client_metadata() &&
+        request.client_metadata().has_browser() &&
+        request.client_metadata().browser().has_machine_user()
+      ? request.client_metadata().browser().machine_user() : "<No machine user>";
+
+    std::string email =
+        request.has_request_data() && request.request_data().has_email()
+      ? request.request_data().email() : "<No email>";
+
     std::cout << "Request: " << request.request_token() << std::endl;
     std::cout << "  Connector: " << connector << std::endl;
     std::cout << "  URL: " << url << std::endl;
     std::cout << "  Filename: " << filename << std::endl;
     std::cout << "  Digest: " << digest << std::endl;
     std::cout << "  Filepath: " << file_path << std::endl;
+    std::cout << "  Machine user: " << machine_user << std::endl;
+    std::cout << "  Email: " << email << std::endl;
   }
 
   bool ReadContentFromFile(const std::string& file_path,

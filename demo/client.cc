@@ -2,7 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <time.h>
+
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -26,10 +29,13 @@ bool user_specific = false;
 // Paramters used to build the request.
 content_analysis::sdk::AnalysisConnector connector =
     content_analysis::sdk::FILE_ATTACHED;
-std::string request_token = "req-12345";
+time_t request_token_number = time(nullptr);
+std::string request_token;
 std::string tag = "dlp";
 std::string digest = "sha256-123456";
 std::string url = "https://upload.example.com";
+std::string email = "me@example.com";
+std::string machine_user = "DOMAIN\\me";
 std::vector<std::string> datas;
 
 // Command line parameters.
@@ -38,6 +44,8 @@ constexpr const char* kArgRequestToken = "--request-token=";
 constexpr const char* kArgTag = "--tag=";
 constexpr const char* kArgDigest = "--digest=";
 constexpr const char* kArgUrl = "--url=";
+constexpr const char* kArgMachineUser = "--machine-user=";
+constexpr const char* kArgEmail = "--email=";
 constexpr const char* kArgUserSpecific = "--user";
 constexpr const char* kArgHelp = "--help";
 
@@ -68,6 +76,10 @@ bool ParseCommandLine(int argc, char* argv[]) {
       digest = arg.substr(strlen(kArgDigest));
     } else if (arg.find(kArgUrl) == 0) {
       url = arg.substr(strlen(kArgUrl));
+    } else if (arg.find(kArgMachineUser) == 0) {
+      machine_user = arg.substr(strlen(kArgMachineUser));
+    } else if (arg.find(kArgEmail) == 0) {
+      email = arg.substr(strlen(kArgEmail));
     } else if (arg.find(kArgUserSpecific) == 0) {
       path = kPathUser;
       user_specific = true;
@@ -91,12 +103,20 @@ void PrintHelp() {
     << "Multiple [@]content_or_file arguments may be specified, each generates one request." << std::endl
     << std::endl << "Options:"  << std::endl
     << kArgConnector << "<connector> : one of 'download', 'attach' (default), 'bulk-data-entry', 'print', or 'file-transfer'" << std::endl
-    << kArgRequestToken << "<unique-token> : defaults to 'req-12345'" << std::endl
+    << kArgRequestToken << "<unique-token> : defaults to 'req-<number>' which auto increments" << std::endl
     << kArgTag << "<tag> : defaults to 'dlp'" << std::endl
     << kArgUrl << "<url> : defaults to 'https://upload.example.com'" << std::endl
+    << kArgMachineUser << "<machine-user> : defaults to 'DOMAIN\\me'" << std::endl
+    << kArgEmail << "<email> : defaults to 'me@example.com'" << std::endl
     << kArgUserSpecific << " : Connects to an OS user specific agent" << std::endl
     << kArgDigest << "<digest> : defaults to 'sha256-123456'" << std::endl
     << kArgHelp << " : prints this help message" << std::endl;
+}
+
+std::string GenerateRequestToken() {
+  std::stringstream stm;
+  stm << "req-" << request_token_number++;
+  return stm.str();
 }
 
 ContentAnalysisRequest BuildRequest(const std::string& data) {
@@ -110,15 +130,21 @@ ContentAnalysisRequest BuildRequest(const std::string& data) {
   ContentAnalysisRequest request;
 
   request.set_analysis_connector(connector);
-  request.set_request_token(request_token);
+  request.set_request_token(!request_token.empty()
+      ? request_token : GenerateRequestToken());
   *request.add_tags() = tag;
 
   auto request_data = request.mutable_request_data();
   request_data->set_url(url);
+  request_data->set_email(email);
   request_data->set_digest(digest);
   if (!filename.empty()) {
     request_data->set_filename(filename);
   }
+
+  auto client_metadata = request.mutable_client_metadata();
+  auto browser = client_metadata->mutable_browser();
+  browser->set_machine_user(machine_user);
 
   if (!filepath.empty()) {
     request.set_file_path(filepath);
