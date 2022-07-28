@@ -16,7 +16,14 @@ using content_analysis::sdk::ContentAnalysisRequest;
 using content_analysis::sdk::ContentAnalysisResponse;
 using content_analysis::sdk::ContentAnalysisAcknowledgement;
 
+// Different paths are used depending on whether this agent should run as a
+// use specific agent or not.  These values are chosen to match the test
+// values in chrome browser.
+constexpr char kPathUser[] = "path_user";
+constexpr char kPathSystem[] = "path_system";
+
 // Global app config.
+const char* path = kPathSystem;
 bool user_specific = false;
 
 // Paramters used to build the request.
@@ -74,6 +81,7 @@ bool ParseCommandLine(int argc, char* argv[]) {
     } else if (arg.find(kArgEmail) == 0) {
       email = arg.substr(strlen(kArgEmail));
     } else if (arg.find(kArgUserSpecific) == 0) {
+      path = kPathUser;
       user_specific = true;
     } else if (arg.find(kArgHelp) == 0) {
       return false;
@@ -244,7 +252,7 @@ int main(int argc, char* argv[]) {
   }
 
   // Each client uses a unique name to identify itself with Google Chrome.
-  auto client = Client::Create({"content_analysis_sdk", user_specific});
+  auto client = Client::Create({path, user_specific});
   if (!client) {
     std::cout << "[Demo] Error starting client" << std::endl;
     return 1;
