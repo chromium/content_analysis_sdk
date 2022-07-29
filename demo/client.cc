@@ -129,6 +129,8 @@ ContentAnalysisRequest BuildRequest(const std::string& data) {
 
   ContentAnalysisRequest request;
 
+  // Set request to expire 5 minutes into the future.
+  request.set_expires_at(time(nullptr) + 5 * 60);
   request.set_analysis_connector(connector);
   request.set_request_token(!request_token.empty()
       ? request_token : GenerateRequestToken());

@@ -132,8 +132,8 @@ message ContentAnalysisRequest {
     string file_path = 14;
   }
 
-  // The absolute deadline (timestamp in UTC Epoch time) that Chrome will wait
-  // until a response from the agent is received.
+  // The absolute deadline (seconds since the UTC Epoch time) that Chrome will
+  // wait until a response from the agent is received.
   optional int64 expires_at = 15;
 
   // Reserved to make sure there is no overlap with DeepScanningClientRequest.

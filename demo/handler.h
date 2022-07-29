@@ -5,6 +5,8 @@
 #ifndef CONTENT_ANALYSIS_DEMO_HANDLER_H_
 #define CONTENT_ANALYSIS_DEMO_HANDLER_H_
 
+#include <time.h>
+
 #include <fstream>
 #include <iostream>
 #include <utility>
@@ -170,7 +172,10 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
         request.has_request_data() && request.request_data().has_email()
       ? request.request_data().email() : "<No email>";
 
+    time_t t = request.expires_at();
+
     std::cout << "Request: " << request.request_token() << std::endl;
+    std::cout << "  Expires at: " << ctime(&t);  // Returned string includes \n.
     std::cout << "  Connector: " << connector << std::endl;
     std::cout << "  URL: " << url << std::endl;
     std::cout << "  Filename: " << filename << std::endl;
