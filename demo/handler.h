@@ -108,7 +108,29 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
   void OnResponseAcknowledged(
       const content_analysis::sdk::ContentAnalysisAcknowledgement&
           ack) override {
+    const char* final_action = "<Unknown>";
+    if (ack.has_final_action()) {
+      switch (ack.final_action()) {
+      case content_analysis::sdk::ContentAnalysisAcknowledgement::ACTION_UNSPECIFIED:
+        final_action = "<Unspecified>";
+        break;
+      case content_analysis::sdk::ContentAnalysisAcknowledgement::ALLOW:
+        final_action = "Allow";
+        break;
+      case content_analysis::sdk::ContentAnalysisAcknowledgement::REPORT_ONLY:
+        final_action = "Report only";
+        break;
+      case content_analysis::sdk::ContentAnalysisAcknowledgement::WARN:
+        final_action = "Warn";
+        break;
+      case content_analysis::sdk::ContentAnalysisAcknowledgement::BLOCK:
+        final_action = "Block";
+        break;
+      }
+    }
+
     std::cout << "Ack: " << ack.request_token() << std::endl;
+    std::cout << "  Final action: " << final_action << std::endl;
   }
 
   void OnInternalError(

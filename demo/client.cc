@@ -25,6 +25,11 @@ constexpr char kPathSystem[] = "path_system";
 // Global app config.
 const char* path = kPathSystem;
 bool user_specific = false;
+bool group = false;
+
+// When grouping, remember the tokens of all requests/responses in order to
+// acknowledge them all with the same final action.
+std::vector<std::string> request_tokens;
 
 // Paramters used to build the request.
 content_analysis::sdk::AnalysisConnector connector =
@@ -47,6 +52,7 @@ constexpr const char* kArgUrl = "--url=";
 constexpr const char* kArgMachineUser = "--machine-user=";
 constexpr const char* kArgEmail = "--email=";
 constexpr const char* kArgUserSpecific = "--user";
+constexpr const char* kArgGroup = "--group";
 constexpr const char* kArgHelp = "--help";
 
 bool ParseCommandLine(int argc, char* argv[]) {
@@ -83,6 +89,8 @@ bool ParseCommandLine(int argc, char* argv[]) {
     } else if (arg.find(kArgUserSpecific) == 0) {
       path = kPathUser;
       user_specific = true;
+    } else if (arg.find(kArgGroup) == 0) {
+      group = true;
     } else if (arg.find(kArgHelp) == 0) {
       return false;
     } else {
@@ -110,6 +118,7 @@ void PrintHelp() {
     << kArgEmail << "<email> : defaults to 'me@example.com'" << std::endl
     << kArgUserSpecific << " : Connects to an OS user specific agent" << std::endl
     << kArgDigest << "<digest> : defaults to 'sha256-123456'" << std::endl
+    << kArgGroup << " : Generate the same final action for all requests" << std::endl
     << kArgHelp << " : prints this help message" << std::endl;
 }
 
@@ -161,6 +170,31 @@ ContentAnalysisRequest BuildRequest(const std::string& data) {
   return request;
 }
 
+// Gets the most severe action within the result.
+ContentAnalysisResponse::Result::TriggeredRule::Action
+GetActionFromResult(const ContentAnalysisResponse::Result& result) {
+  auto action =
+    ContentAnalysisResponse::Result::TriggeredRule::ACTION_UNSPECIFIED;
+  for (auto rule : result.triggered_rules()) {
+    if (rule.has_action() && rule.action() > action)
+      action = rule.action();
+  }
+  return action;
+}
+
+// Gets the most severe action within all the the results of a response.
+ContentAnalysisResponse::Result::TriggeredRule::Action
+GetActionFromResponse(const ContentAnalysisResponse& response) {
+  auto action =
+    ContentAnalysisResponse::Result::TriggeredRule::ACTION_UNSPECIFIED;
+  for (auto result : response.results()) {
+    auto action2 = GetActionFromResult(result);
+    if (action2 > action)
+      action = action2;
+  }
+  return action;
+}
+
 void DumpResponse(int position, const ContentAnalysisResponse& response) {
   for (auto result : response.results()) {
     auto tag = result.has_tag() ? result.tag() : "<no-tag>";
@@ -184,12 +218,7 @@ void DumpResponse(int position, const ContentAnalysisResponse& response) {
       break;
     }
 
-    auto action =
-      ContentAnalysisResponse::Result::TriggeredRule::ACTION_UNSPECIFIED;
-    for (auto rule : result.triggered_rules()) {
-      if (rule.has_action() && rule.action() > action)
-        action = rule.action();
-    }
+    auto action = GetActionFromResult(result);
     std::string action_str;
     switch (action) {
     case ContentAnalysisResponse::Result::TriggeredRule::ACTION_UNSPECIFIED:
@@ -213,16 +242,19 @@ void DumpResponse(int position, const ContentAnalysisResponse& response) {
 }
 
 ContentAnalysisAcknowledgement BuildAcknowledgement(
-    const std::string& request_token) {
+    const std::string& request_token,
+    ContentAnalysisAcknowledgement::FinalAction final_action) {
   ContentAnalysisAcknowledgement ack;
   ack.set_request_token(request_token);
   ack.set_status(ContentAnalysisAcknowledgement::SUCCESS);
+  ack.set_final_action(final_action);
   return ack;
 }
 
 int HandleRequest(Client* client,
                   int position,
-                  const ContentAnalysisRequest& request) {
+                  const ContentAnalysisRequest& request,
+                  ContentAnalysisAcknowledgement::FinalAction* final_action) {
   ContentAnalysisResponse response;
   int err = client->Send(request, &response);
   if (err != 0) {
@@ -235,10 +267,31 @@ int HandleRequest(Client* client,
   } else {
     DumpResponse(position, response);
 
-    int err = client->Acknowledge(
-        BuildAcknowledgement(request.request_token()));
-    if (err != 0) {
-      std::cout << "[Demo] Error sending ack " << position << std::endl;
+    *final_action = ContentAnalysisAcknowledgement::ALLOW;
+    switch (GetActionFromResponse(response)) {
+    case ContentAnalysisResponse::Result::TriggeredRule::ACTION_UNSPECIFIED:
+      break;
+    case ContentAnalysisResponse::Result::TriggeredRule::REPORT_ONLY:
+      *final_action = ContentAnalysisAcknowledgement::REPORT_ONLY;
+      break;
+    case ContentAnalysisResponse::Result::TriggeredRule::WARN:
+      *final_action = ContentAnalysisAcknowledgement::WARN;
+      break;
+    case ContentAnalysisResponse::Result::TriggeredRule::BLOCK:
+      *final_action = ContentAnalysisAcknowledgement::BLOCK;
+      break;
+    }
+
+    // If grouping, remember the request's token in order to ack the response
+    // later.
+    if (group) {
+      request_tokens.push_back(request.request_token());
+    } else {
+      int err = client->Acknowledge(
+        BuildAcknowledgement(request.request_token(), *final_action));
+      if (err != 0) {
+        std::cout << "[Demo] Error sending ack " << position << std::endl;
+      }
     }
 
     return 1;
@@ -260,8 +313,44 @@ int main(int argc, char* argv[]) {
     return 1;
   };
 
+  ContentAnalysisAcknowledgement::FinalAction final_action =
+      ContentAnalysisAcknowledgement::ALLOW;
   for (int i = 0; i < datas.size(); ++i) {
-    HandleRequest(client.get(), i + 1, BuildRequest(datas[i]));
+    ContentAnalysisAcknowledgement::FinalAction final_action2;
+    HandleRequest(client.get(), i + 1, BuildRequest(datas[i]), &final_action2);
+    if (final_action2 > final_action)
+      final_action = final_action2;
+  }
+
+  if (group) {
+    std::cout << std::endl;
+    std::cout << "[Demo] Final action for all requests is ";
+    switch (final_action) {
+    // Google Chrome fails open, so if no action is specified that is the same
+    // as ALLOW.
+    case ContentAnalysisAcknowledgement::ACTION_UNSPECIFIED:
+    case ContentAnalysisAcknowledgement::ALLOW:
+      std::cout << "allowed";
+      break;
+    case ContentAnalysisAcknowledgement::REPORT_ONLY:
+      std::cout << "reported only";
+      break;
+    case ContentAnalysisAcknowledgement::WARN:
+      std::cout << "warned";
+      break;
+    case ContentAnalysisAcknowledgement::BLOCK:
+      std::cout << "blocked";
+      break;
+    }
+    std::cout << std::endl << std::endl;
+
+    for (auto token : request_tokens) {
+      int err = client->Acknowledge(
+        BuildAcknowledgement(token, final_action));
+      if (err != 0) {
+        std::cout << "[Demo] Error sending ack for " << token << std::endl;
+      }
+    }
   }
 
   return 0;
