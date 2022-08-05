@@ -114,6 +114,9 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
       case content_analysis::sdk::ContentAnalysisAcknowledgement::ACTION_UNSPECIFIED:
         final_action = "<Unspecified>";
         break;
+      case content_analysis::sdk::ContentAnalysisAcknowledgement::ALLOW:
+        final_action = "Allow";
+        break;
       case content_analysis::sdk::ContentAnalysisAcknowledgement::REPORT_ONLY:
         final_action = "Report only";
         break;
@@ -122,9 +125,6 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
         break;
       case content_analysis::sdk::ContentAnalysisAcknowledgement::BLOCK:
         final_action = "Block";
-        break;
-      case content_analysis::sdk::ContentAnalysisAcknowledgement::ALLOW:
-        final_action = "Allow";
         break;
       }
     }

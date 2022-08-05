@@ -322,12 +322,9 @@ int main(int argc, char* argv[]) {
       final_action = final_action2;
   }
 
-  // If there are any request tokens in the vector, the acks are meant to be
-  // grouped, so ack now with the same final action.
   if (group) {
     std::cout << std::endl;
     std::cout << "[Demo] Final action for all requests is ";
-    std::string action_str;
     switch (final_action) {
     case ContentAnalysisAcknowledgement::ACTION_UNSPECIFIED:
     case ContentAnalysisAcknowledgement::ALLOW:
