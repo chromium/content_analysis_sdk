@@ -326,6 +326,8 @@ int main(int argc, char* argv[]) {
     std::cout << std::endl;
     std::cout << "[Demo] Final action for all requests is ";
     switch (final_action) {
+    // Google Chrome fails open, so if no action is specified that is the same
+    // as ALLOW.
     case ContentAnalysisAcknowledgement::ACTION_UNSPECIFIED:
     case ContentAnalysisAcknowledgement::ALLOW:
       std::cout << "allowed";
