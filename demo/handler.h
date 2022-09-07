@@ -182,7 +182,7 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
 
     std::string file_path =
         request.has_file_path()
-        ? request.file_path() : "None, bulk text entry";
+        ? request.file_path() : "None, bulk text entry or print";
 
     std::string machine_user =
         request.has_client_metadata() &&
