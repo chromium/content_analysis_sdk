@@ -62,8 +62,16 @@ message ClientDownloadRequest {
     DOWNLOAD_URL = 0;
     // A redirect URL that was fetched before hitting the final DOWNLOAD_URL.
     DOWNLOAD_REDIRECT = 1;
-    
-    reserved 2 to 5;
+    // The final top-level URL of the tab that triggered the download.
+    TAB_URL = 2;
+    // A redirect URL thas was fetched before hitting the final TAB_URL.
+    TAB_REDIRECT = 3;
+    // The document URL for a PPAPI plugin instance that initiated the download.
+    // This is the document.url for the container element for the plugin
+    // instance.
+    PPAPI_DOCUMENT = 4;
+    // The plugin URL for a PPAPI plugin instance that initiated the download.
+    PPAPI_PLUGIN = 5;
   }
 
   message Resource {
