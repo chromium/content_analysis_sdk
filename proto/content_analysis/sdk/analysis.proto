@@ -38,7 +38,10 @@ message ContentMetaData {
   // is not signed in.
   optional string email = 5;
 
-  reserved 6;
+  // Name of tab title.
+  optional string tab_title = 9;
+
+  reserved 6 to 8;
 }
 
 message ClientMetadata {
@@ -122,6 +125,13 @@ message ContentAnalysisRequest {
   // The absolute deadline (seconds since the UTC Epoch time) that Chrome will
   // wait until a response from the agent is received.
   optional int64 expires_at = 15;
+
+  // ID for keeping track of analysis requests that belong to the same user
+  // action.
+  optional string user_action_id = 16;
+
+  // Count of analysis requests that belong to the same user action.
+  optional int64 user_action_requests_count = 17;
 
   // Reserved to make sure there is no overlap with DeepScanningClientRequest.
   reserved 1 to 4, 6 to 8;
