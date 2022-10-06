@@ -37,11 +37,16 @@ struct TestHandler : public AgentEventHandler {
       const ContentAnalysisAcknowledgement& ack) override {
     ++ack_count_;
   }
+  void OnCancelRequests(
+      const ContentAnalysisCancelRequests& cancel) override {
+    ++cancel_count_;
+  }
 
   int connect_count_ = 0;
   int disconnect_count_ = 0;
   int request_count_ = 0;
   int ack_count_ = 0;
+  int cancel_count_ = 0;
   BrowserInfo last_info_;
 };
 
@@ -296,6 +301,7 @@ TEST(AgentTest, ConnectAndClose) {
   agent->HandleOneEventForTesting();
   ASSERT_EQ(1, handler_ptr->connect_count_);
   ASSERT_EQ(0, handler_ptr->disconnect_count_);
+  ASSERT_EQ(0, handler_ptr->cancel_count_);
   ASSERT_EQ(GetCurrentProcessId(), handler_ptr->last_info_.pid);
 
   // Close the client and make sure a disconnect is received.
@@ -303,6 +309,7 @@ TEST(AgentTest, ConnectAndClose) {
   agent->HandleOneEventForTesting();
   ASSERT_EQ(1, handler_ptr->connect_count_);
   ASSERT_EQ(1, handler_ptr->disconnect_count_);
+  ASSERT_EQ(0, handler_ptr->cancel_count_);
   ASSERT_EQ(GetCurrentProcessId(), handler_ptr->last_info_.pid);
 }
 
@@ -333,6 +340,8 @@ TEST(AgentTest, Request) {
     agent->HandleOneEventForTesting();
   }
   ASSERT_EQ(1, handler_ptr->request_count_);
+  ASSERT_EQ(0, handler_ptr->ack_count_);
+  ASSERT_EQ(0, handler_ptr->cancel_count_);
 
   client_thread.join();
 }
@@ -366,6 +375,8 @@ TEST(AgentTest, Request_Large) {
     agent->HandleOneEventForTesting();
   }
   ASSERT_EQ(1, handler_ptr->request_count_);
+  ASSERT_EQ(0, handler_ptr->ack_count_);
+  ASSERT_EQ(0, handler_ptr->cancel_count_);
 
   client_thread.join();
 }
@@ -401,6 +412,8 @@ TEST(AgentTest, Request_DoubleSend) {
     agent->HandleOneEventForTesting();
   }
   ASSERT_EQ(1, handler_ptr->request_count_);
+  ASSERT_EQ(0, handler_ptr->ack_count_);
+  ASSERT_EQ(0, handler_ptr->cancel_count_);
 
   client_thread.join();
 }
@@ -472,6 +485,33 @@ TEST(AgentTest, Ack) {
   }
   ASSERT_EQ(1, handler_ptr->request_count_);
   ASSERT_EQ(1, handler_ptr->ack_count_);
+  ASSERT_EQ(0, handler_ptr->cancel_count_);
+
+  client_thread.join();
+}
+
+TEST(AgentTest, Cancel) {
+  TestHandler* handler_ptr;
+  auto agent = CreateAgent({ "test", false }, &handler_ptr);
+  ASSERT_TRUE(agent);
+
+  // Create a thread to handle the client.  Since the client is sync, it can't
+  // run in the same thread as the agent.
+  std::thread client_thread([]() {
+    auto client = CreateClient({"test", false});
+    ASSERT_TRUE(client);
+
+    ContentAnalysisCancelRequests cancel;
+    cancel.set_user_action_id("1234567890");
+    int ret = client->CancelRequests(cancel);
+    ASSERT_EQ(0, ret);
+  });
+
+  while (handler_ptr->cancel_count_ == 0) {
+    agent->HandleOneEventForTesting();
+  }
+  ASSERT_EQ(0, handler_ptr->request_count_);
+  ASSERT_EQ(0, handler_ptr->ack_count_);
 
   client_thread.join();
 }

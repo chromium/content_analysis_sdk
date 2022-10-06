@@ -22,6 +22,7 @@ class ClientWin : public ClientBase {
   int Send(const ContentAnalysisRequest& request,
                  ContentAnalysisResponse* response) override;
   int Acknowledge(const ContentAnalysisAcknowledgement& ack) override;
+  int CancelRequests(const ContentAnalysisCancelRequests& cancel) override;
 
  private:
   static DWORD ConnectToPipe(const std::string& pipename, HANDLE* handle);

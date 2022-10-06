@@ -55,6 +55,11 @@ class Client {
   // Sends an response acknowledgment back to the agent.
   virtual int Acknowledge(const ContentAnalysisAcknowledgement& ack) = 0;
 
+  // Ask the agent to cancel all requests matching the criteria in `cancel`.
+  // This is a best effort only, the agent may cancel some, all, or no requests
+  // that match.
+  virtual int CancelRequests(const ContentAnalysisCancelRequests& cancel) = 0;
+
  protected:
   Client() = default;
   Client(const Client& rhs) = delete;
