@@ -196,7 +196,11 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
 
     time_t t = request.expires_at();
 
+    std::string user_action_id = request.has_user_action_id()
+        ? request.user_action_id() : "<No user action id>";
+
     std::cout << "Request: " << request.request_token() << std::endl;
+    std::cout << "  User action ID: " << user_action_id;
     std::cout << "  Expires at: " << ctime(&t);  // Returned string includes \n.
     std::cout << "  Connector: " << connector << std::endl;
     std::cout << "  URL: " << url << std::endl;

@@ -147,6 +147,17 @@ class AgentEventHandler {
   virtual void OnResponseAcknowledged(
       const ContentAnalysisAcknowledgement& ack) {}
 
+  // Called when a Google Chrome browser asks the agent to cancels one or
+  // more content analysis requests.  This happens when the user presses the
+  // Cancel button in the in-progress dialog.  This is expected to be a best
+  // effort only; agents may choose to ignore this message or possibly only
+  // cancel a subset of requests with the given user action id.
+  //
+  // The default action is to do nothing. If the agent does not need perform
+  // any special actions this methods does not need to be overridden.
+  virtual void OnCancelRequests(
+      const ContentAnalysisCancelRequests& cancel) {}
+
   // Called whenever the Agent implementation detects an error.  `context`
   // is a string that provide a hint to the handler as to where the error
   // happened in the agent.  `error` represent the actual error detected.
