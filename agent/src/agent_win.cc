@@ -316,6 +316,11 @@ ResultCode AgentWin::Connection::CallHandler() {
     // This is an ack from Google Chrome that it has received a content
     // analysis response from the agent.
     handler_->OnResponseAcknowledged(message.ack());
+  } else if (message.has_cancel()) {
+    // Google Chrome is informing the agent that the content analysis
+    // request(s) associated with the given user action id have been
+    // canceled by the user.
+    handler_->OnCancelRequests(message.cancel());
   } else {
     // Malformed message.
     rc = NotifyIfError("NoRequestOrAck",

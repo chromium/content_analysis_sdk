@@ -25,5 +25,9 @@ int ClientMac::Acknowledge(const ContentAnalysisAcknowledgement& ack) {
   return -1;
 }
 
+int ClientMac::CancelRequests(const ContentAnalysisCancelRequests& cancel) {
+  return -1;
+}
+
 }  // namespace sdk
 }  // namespace content_analysis

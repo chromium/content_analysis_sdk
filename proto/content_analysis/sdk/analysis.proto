@@ -212,10 +212,18 @@ message ContentAnalysisAcknowledgement {
   optional FinalAction final_action = 3;
 }
 
+// A message that asks the agent to cancel all requests with the given user
+// action id.  Note that more that content analysis request may have the given
+// user action id.
+message ContentAnalysisCancelRequests {
+  optional string user_action_id = 1;
+}
+
 // Generic message sent from Chrome to Agent.
 message ChromeToAgent {
   optional ContentAnalysisRequest request = 1;
   optional ContentAnalysisAcknowledgement ack = 2;
+  optional ContentAnalysisCancelRequests cancel = 3;
 }
 
 // Generic message sent from Agent to Chrome.

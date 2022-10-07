@@ -75,6 +75,16 @@ int ClientWin::Acknowledge(const ContentAnalysisAcknowledgement& ack) {
       ? 0 : -1;
 }
 
+int ClientWin::CancelRequests(const ContentAnalysisCancelRequests& cancel) {
+  // TODO: could avoid a copy by changing argument to be
+  // `ContentAnalysisCancelRequests cancel` and then using std::move() below and
+  // at call site.
+  ChromeToAgent chrome_to_agent;
+  *chrome_to_agent.mutable_cancel() = cancel;
+  return WriteMessageToPipe(hPipe_, chrome_to_agent.SerializeAsString())
+      ? 0 : -1;
+}
+
 // static
 DWORD ClientWin::ConnectToPipe(const std::string& pipename, HANDLE* handle) {
   HANDLE h = INVALID_HANDLE_VALUE;
