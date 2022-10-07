@@ -133,7 +133,8 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
     std::cout << "  Final action: " << final_action << std::endl;
   }
   void OnCancelRequests(
-      const content_analysis::sdk::ContentAnalysisCancelRequests& cancel) {
+      const content_analysis::sdk::ContentAnalysisCancelRequests& cancel)
+      override {
     std::cout << "Cancel: " << std::endl;
     std::cout << "  User action ID: " << cancel.user_action_id() << std::endl;
   }
