@@ -132,6 +132,12 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
     std::cout << "Ack: " << ack.request_token() << std::endl;
     std::cout << "  Final action: " << final_action << std::endl;
   }
+  void OnCancelRequests(
+      const content_analysis::sdk::ContentAnalysisCancelRequests& cancel)
+      override {
+    std::cout << "Cancel: " << std::endl;
+    std::cout << "  User action ID: " << cancel.user_action_id() << std::endl;
+  }
 
   void OnInternalError(
       const char* context,
@@ -200,7 +206,7 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
         ? request.user_action_id() : "<No user action id>";
 
     std::cout << "Request: " << request.request_token() << std::endl;
-    std::cout << "  User action ID: " << user_action_id;
+    std::cout << "  User action ID: " << user_action_id << std::endl;
     std::cout << "  Expires at: " << ctime(&t);  // Returned string includes \n.
     std::cout << "  Connector: " << connector << std::endl;
     std::cout << "  URL: " << url << std::endl;
