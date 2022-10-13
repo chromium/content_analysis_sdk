@@ -177,6 +177,10 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
     std::string url =
         request.has_request_data() && request.request_data().has_url()
         ? request.request_data().url() : "<No URL>";
+    
+    std::string tab_title =
+        request.has_request_data() && request.request_data().has_tab_title()
+        ? request.request_data().tab_title() : "<No tab title>";
 
     std::string filename =
         request.has_request_data() && request.request_data().has_filename()
@@ -210,6 +214,7 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
     std::cout << "  Expires at: " << ctime(&t);  // Returned string includes \n.
     std::cout << "  Connector: " << connector << std::endl;
     std::cout << "  URL: " << url << std::endl;
+    std::cout << "  Tab title: " << tab_title << std::endl;
     std::cout << "  Filename: " << filename << std::endl;
     std::cout << "  Digest: " << digest << std::endl;
     std::cout << "  Filepath: " << file_path << std::endl;
