@@ -18,9 +18,11 @@ constexpr char kPathSystem[] = "path_system";
 // Global app config.
 const char* path = kPathSystem;
 bool user_specific = false;
+unsigned long delay = 0;  // In seconds.
 
 // Command line parameters.
 constexpr const char* kArgUserSpecific = "--user";
+constexpr const char* kArgDelaySpecific = "--delay=";
 constexpr const char* kArgHelp = "--help";
 
 bool ParseCommandLine(int argc, char* argv[]) {
@@ -29,6 +31,11 @@ bool ParseCommandLine(int argc, char* argv[]) {
     if (arg.find(kArgUserSpecific) == 0) {
       path = kPathUser;
       user_specific = true;
+    } else if (arg.find(kArgDelaySpecific) == 0) {
+      delay = std::stoul(arg.substr(strlen(kArgDelaySpecific)));
+      if (delay > 30) {
+          delay = 30;
+      }
     } else if (arg.find(kArgHelp) == 0) {
       return false;
     }
@@ -45,6 +52,7 @@ void PrintHelp() {
     << "Data containing the string 'block' blocks the request data from being used." << std::endl
     << std::endl << "Options:"  << std::endl
     << kArgUserSpecific << " : Make agent OS user specific" << std::endl
+    << kArgDelaySpecific << "<delay> : Add a delay to request processing in seconds (max 30)." << std::endl
     << kArgHelp << " : prints this help message" << std::endl;
 }
 
@@ -57,7 +65,7 @@ int main(int argc, char* argv[]) {
   // Each agent uses a unique name to identify itself with Google Chrome.
   content_analysis::sdk::ResultCode rc;
   auto agent = content_analysis::sdk::Agent::Create(
-      {path, user_specific}, std::make_unique<Handler>(), &rc);
+      {path, user_specific}, std::make_unique<Handler>(delay), &rc);
   if (!agent || rc != content_analysis::sdk::ResultCode::OK) {
     std::cout << "[Demo] Error starting agent: "
               << content_analysis::sdk::ResultCodeToString(rc)

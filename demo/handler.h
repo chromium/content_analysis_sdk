@@ -7,6 +7,7 @@
 
 #include <time.h>
 
+#include <chrono>
 #include <fstream>
 #include <iostream>
 #include <utility>
@@ -19,7 +20,7 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
  public:
   using Event = content_analysis::sdk::ContentAnalysisEvent;
 
-  Handler() = default;
+  Handler(unsigned long delay) : delay_(delay) {}
 
  protected:
   // Analyzes one request from Google Chrome and responds back to the browser
@@ -72,6 +73,12 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
     }
 
     std::cout << std::endl;
+
+    // If a delay is specified, wait that much.
+    if (delay_ > 0) {
+      std::cout << "[Demo] delaying request processing for " << delay_ << "s" << std::endl;
+      std::this_thread::sleep_for(std::chrono::seconds(delay_));
+    }
 
     // Send the response back to Google Chrome.
     auto rc = event->Send();
@@ -250,6 +257,8 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
     // content is allowed.
     return content.find("block") != std::string::npos;
   }
+
+  unsigned long delay_;
 };
 
 #endif  // CONTENT_ANALYSIS_DEMO_HANDLER_H_
