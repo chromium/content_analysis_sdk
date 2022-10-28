@@ -55,7 +55,7 @@ void PrintHelp() {
     << "Data containing the string 'block' blocks the request data from being used." << std::endl
     << std::endl << "Options:"  << std::endl
     << kArgUserSpecific << " : Make agent OS user specific" << std::endl
-    << kArgDelaySpecific << "<delay> : Add the delay to request processing in seconds" << std::endl
+    << kArgDelaySpecific << "<delay> : Add a delay to request processing in seconds (max 30)." << std::endl
     << kArgHelp << " : prints this help message" << std::endl;
 }
 

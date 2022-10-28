@@ -76,7 +76,7 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
 
     // If a delay is specified, wait that much.
     if (delay_ > 0) {
-      std::cout << "[Demo] delaying request for " << delay_ << "s" << std::endl;
+      std::cout << "[Demo] delaying request processing for " << delay_ << "s" << std::endl;
       std::this_thread::sleep_for(std::chrono::seconds(delay_));
     }
 
