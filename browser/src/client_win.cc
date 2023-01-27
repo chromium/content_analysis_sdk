@@ -85,6 +85,10 @@ int ClientWin::CancelRequests(const ContentAnalysisCancelRequests& cancel) {
       ? 0 : -1;
 }
 
+HANDLE ClientWin::pipe_handle() {
+  return hPipe_;
+}
+
 // static
 DWORD ClientWin::ConnectToPipe(const std::string& pipename, HANDLE* handle) {
   HANDLE h = INVALID_HANDLE_VALUE;
