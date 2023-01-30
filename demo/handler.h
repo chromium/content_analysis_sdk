@@ -10,6 +10,7 @@
 #include <chrono>
 #include <fstream>
 #include <iostream>
+#include <thread>
 #include <utility>
 
 #include "content_analysis/sdk/analysis_agent.h"
