@@ -17,12 +17,14 @@ constexpr char kPathSystem[] = "brcm_chrm_cas";
 
 // Global app config.
 std::string path = kPathSystem;
+bool use_queue = false;
 bool user_specific = false;
 unsigned long delay = 0;  // In seconds.
 
 // Command line parameters.
 constexpr const char* kArgDelaySpecific = "--delay=";
 constexpr const char* kArgPath = "--path=";
+constexpr const char* kArgQueued = "--queued";
 constexpr const char* kArgUserSpecific = "--user";
 constexpr const char* kArgHelp = "--help";
 
@@ -44,6 +46,8 @@ bool ParseCommandLine(int argc, char* argv[]) {
       }
     } else if (arg.find(kArgPath) == 0) {
       path = arg.substr(strlen(kArgPath));
+    } else if (arg.find(kArgQueued) == 0) {
+      use_queue = true;
     } else if (arg.find(kArgHelp) == 0) {
       return false;
     }
@@ -61,7 +65,8 @@ void PrintHelp() {
     << std::endl << "Options:"  << std::endl
     << kArgDelaySpecific << "<delay> : Add a delay to request processing in seconds (max 30)." << std::endl
     << kArgPath << " <path> : Used the specified path instead of default. Must come after --user." << std::endl
-    << kArgUserSpecific << " : Make agent OS user specific" << std::endl
+    << kArgQueued << " : Queue requests for processing in a background thread" << std::endl
+    << kArgUserSpecific << " : Make agent OS user specific." << std::endl
     << kArgHelp << " : prints this help message" << std::endl;
 }
 
@@ -71,10 +76,14 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
+  auto handler = use_queue
+      ? std::make_unique<QueuingHandler>(delay)
+      : std::make_unique<Handler>(delay);
+
   // Each agent uses a unique name to identify itself with Google Chrome.
   content_analysis::sdk::ResultCode rc;
   auto agent = content_analysis::sdk::Agent::Create(
-      {path, user_specific}, std::make_unique<Handler>(delay), &rc);
+      {path, user_specific}, std::move(handler), &rc);
   if (!agent || rc != content_analysis::sdk::ResultCode::OK) {
     std::cout << "[Demo] Error starting agent: "
               << content_analysis::sdk::ResultCodeToString(rc)

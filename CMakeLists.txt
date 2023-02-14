@@ -198,17 +198,6 @@ add_executable(agent
 target_include_directories(agent PRIVATE ${AGENT_INCLUDES})
 target_link_libraries(agent PRIVATE cac_agent)
 
-# A demo agent that queues up requests for a background thread.
-if (WIN OR LINUX)
-  add_executable(queued_agent
-    ./demo/queued_agent.cc
-    ./demo/handler.h
-    ./demo/request_queue.h
-  )
-  target_include_directories(queued_agent PRIVATE ${AGENT_INCLUDES})
-  target_link_libraries(queued_agent PRIVATE cac_agent)
-endif()
-
 # The demo client executable.
 add_executable(browser ./demo/client.cc)
 target_include_directories(browser PRIVATE ${BROWSER_INCLUDES})

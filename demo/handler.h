@@ -14,6 +14,7 @@
 #include <utility>
 
 #include "content_analysis/sdk/analysis_agent.h"
+#include "demo/request_queue.h"
 
 // An AgentEventHandler that dumps requests information to stdout and blocks
 // any requests that have the keyword "block" in their data
@@ -260,6 +261,54 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
   }
 
   unsigned long delay_;
+};
+
+// An AgentEventHandler that dumps requests information to stdout and blocks
+// any requests that have the keyword "block" in their data
+class QueuingHandler : public Handler {
+ public:
+  QueuingHandler(unsigned long delay) : Handler(delay)  {
+    StartBackgroundThread();
+  }
+
+  ~QueuingHandler() override {
+    // Abort background process and wait for it to finish.
+    request_queue_.abort();
+    WaitForBackgroundThread();
+  }
+
+ private:
+  void OnAnalysisRequested(std::unique_ptr<Event> event) override {
+    request_queue_.push(std::move(event));
+  }
+
+  static void* ProcessRequests(void* qh) {
+    QueuingHandler* handler = reinterpret_cast<QueuingHandler*>(qh);
+
+    while (true) {
+      auto event = handler->request_queue_.pop();
+      if (!event)
+        break;
+
+      handler->AnalyzeContent(std::move(event));
+    }
+
+    return 0;
+  }
+
+  // A list of outstanding content analysis requests.
+  RequestQueue request_queue_;
+
+  void StartBackgroundThread() {
+    thread_ = std::make_unique<std::thread>(ProcessRequests, this);
+  }
+
+  void WaitForBackgroundThread() {
+    thread_->join();
+  }
+
+  // Thread id of backgrond thread.
+  std::unique_ptr<std::thread> thread_;
 };
 
 #endif  // CONTENT_ANALYSIS_DEMO_HANDLER_H_
