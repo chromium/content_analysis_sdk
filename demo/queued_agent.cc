@@ -16,22 +16,28 @@
 // use specific agent or not.  These values are chosen to match the test
 // values in chrome browser.
 constexpr char kPathUser[] = "path_user";
-constexpr char kPathSystem[] = "path_system";
+constexpr char kPathSystem[] = "brcm_chrm_cas";
 
 // Global app config.
-const char* path = kPathSystem;
+std::string path = kPathSystem;
 bool user_specific = false;
 unsigned long delay = 0;  // In seconds.
 
 // Command line parameters.
-constexpr const char* kArgUserSpecific = "--user";
 constexpr const char* kArgDelaySpecific = "--delay=";
+constexpr const char* kArgPath = "--path=";
+constexpr const char* kArgUserSpecific = "--user";
 constexpr const char* kArgHelp = "--help";
 
 bool ParseCommandLine(int argc, char* argv[]) {
   for (int i = 1; i < argc; ++i) {
     const std::string arg = argv[i];
     if (arg.find(kArgUserSpecific) == 0) {
+      // If kArgPath was already used, abort.
+      if (path != kPathSystem) {
+        std::cout << std::endl << "ERROR: use --path=<path> after --user";
+        return false;
+      }
       path = kPathUser;
       user_specific = true;
     } else if (arg.find(kArgDelaySpecific) == 0) {
@@ -39,6 +45,8 @@ bool ParseCommandLine(int argc, char* argv[]) {
       if (delay > 30) {
           delay = 30;
       }
+    } else if (arg.find(kArgPath) == 0) {
+      path = arg.substr(strlen(kArgPath));
     } else if (arg.find(kArgHelp) == 0) {
       return false;
     }
@@ -54,8 +62,9 @@ void PrintHelp() {
     << "A simple agent to process content analysis requests." << std::endl
     << "Data containing the string 'block' blocks the request data from being used." << std::endl
     << std::endl << "Options:"  << std::endl
-    << kArgUserSpecific << " : Make agent OS user specific" << std::endl
     << kArgDelaySpecific << "<delay> : Add a delay to request processing in seconds (max 30)." << std::endl
+    << kArgPath << " <path> : Used the specified path instead of default. Must come after --user." << std::endl
+    << kArgUserSpecific << " : Make agent OS user specific" << std::endl
     << kArgHelp << " : prints this help message" << std::endl;
 }
 
