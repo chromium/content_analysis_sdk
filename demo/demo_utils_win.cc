@@ -31,8 +31,8 @@ int WriteHandleContentToFile(void* handle,
 
   size_t total = 0;
   while (total != size) {
-    DWORD high_offset = (total & 0xffffffff00000000) >> 32;
-    DWORD low_offset = (total & 0x00000000ffffffff);
+    DWORD high_offset = total >> 32;
+    DWORD low_offset = total & 0xffffffff;
     size_t chunk_size = std::min<size_t>(kChunkSize, size - total);
 
     void* address = MapViewOfFile(handle,
