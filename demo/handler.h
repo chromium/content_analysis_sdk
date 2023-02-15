@@ -15,6 +15,7 @@
 
 #include "content_analysis/sdk/analysis_agent.h"
 #include "demo/request_queue.h"
+#include "demo/demo_utils.h"
 
 // An AgentEventHandler that dumps requests information to stdout and blocks
 // any requests that have the keyword "block" in their data
@@ -22,7 +23,12 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
  public:
   using Event = content_analysis::sdk::ContentAnalysisEvent;
 
-  Handler(unsigned long delay) : delay_(delay) {}
+  std::unique_ptr<Handler> CreateHandler(unsigned long delay,
+                                         const std::string& print_file_path);
+
+  Handler(unsigned long delay, const std::string& print_data_file_path) :
+      delay_(delay), print_data_file_path_(print_data_file_path) {
+  }
 
  protected:
   // Analyzes one request from Google Chrome and responds back to the browser
@@ -52,6 +58,11 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
       if (success) {
         block = ShouldBlockRequest(content);
       }
+    } else if (event->GetRequest().has_print_data()) {
+      // In the case of print request, normally the PDF bytes would be parsed
+      // for sensitive data violations. To keep this class simple, only the
+      // URL is checked for the word "block".
+      block = ShouldBlockRequest(event->GetRequest().request_data().url());
     }
 
     if (!success) {
@@ -230,6 +241,16 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
     std::cout << "  Filepath: " << file_path << std::endl;
     std::cout << "  Machine user: " << machine_user << std::endl;
     std::cout << "  Email: " << email << std::endl;
+    if (request.has_print_data() && !print_data_file_path_.empty()) {
+      int res = WriteHandleContentToFile((void*)request.print_data().handle(),
+                                         request.print_data().size(),
+                                         print_data_file_path_);
+      if (res == 0) {
+        std::cout << "  Print data save to: " << print_data_file_path_;
+      } else {
+        std::cout << "  Print data failed to save: " << res;
+      }
+    }
   }
 
   bool ReadContentFromFile(const std::string& file_path,
@@ -262,6 +283,7 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
   }
 
   unsigned long delay_;
+  std::string print_data_file_path_;
 };
 
 // An AgentEventHandler that dumps requests information to stdout and blocks
