@@ -189,6 +189,7 @@ HANDLE ClientWin::CreateDuplicatePrintDataHandle(HANDLE print_data) {
 
   HANDLE dupe = nullptr;
   DuplicateHandle(
+
       /*hSourceProcessHandle=*/GetCurrentProcess(),
       /*hSourceHandle=*/print_data,
       /*hTargetProcessHandle=*/target_process,
