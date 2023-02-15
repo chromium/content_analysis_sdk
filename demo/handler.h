@@ -290,7 +290,8 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
 // any requests that have the keyword "block" in their data
 class QueuingHandler : public Handler {
  public:
-  QueuingHandler(unsigned long delay) : Handler(delay)  {
+  QueuingHandler(unsigned long delay, const std::string& print_data_file_path)
+      : Handler(delay, print_data_file_path)  {
     StartBackgroundThread();
   }
 
