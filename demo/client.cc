@@ -20,10 +20,10 @@ using content_analysis::sdk::ContentAnalysisAcknowledgement;
 // use specific agent or not.  These values are chosen to match the test
 // values in chrome browser.
 constexpr char kPathUser[] = "path_user";
-constexpr char kPathSystem[] = "path_system";
+constexpr char kPathSystem[] = "brcm_chrm_cas";
 
 // Global app config.
-const char* path = kPathSystem;
+std::string path = kPathSystem;
 bool user_specific = false;
 bool group = false;
 
@@ -45,14 +45,15 @@ std::vector<std::string> datas;
 
 // Command line parameters.
 constexpr const char* kArgConnector = "--connector=";
+constexpr const char* kArgDigest = "--digest=";
+constexpr const char* kArgEmail = "--email=";
+constexpr const char* kArgGroup = "--group";
+constexpr const char* kArgMachineUser = "--machine-user=";
+constexpr const char* kArgPath = "--path=";
 constexpr const char* kArgRequestToken = "--request-token=";
 constexpr const char* kArgTag = "--tag=";
-constexpr const char* kArgDigest = "--digest=";
 constexpr const char* kArgUrl = "--url=";
-constexpr const char* kArgMachineUser = "--machine-user=";
-constexpr const char* kArgEmail = "--email=";
 constexpr const char* kArgUserSpecific = "--user";
-constexpr const char* kArgGroup = "--group";
 constexpr const char* kArgHelp = "--help";
 
 bool ParseCommandLine(int argc, char* argv[]) {
@@ -86,7 +87,14 @@ bool ParseCommandLine(int argc, char* argv[]) {
       machine_user = arg.substr(strlen(kArgMachineUser));
     } else if (arg.find(kArgEmail) == 0) {
       email = arg.substr(strlen(kArgEmail));
+    } else if (arg.find(kArgPath) == 0) {
+      path = arg.substr(strlen(kArgPath));
     } else if (arg.find(kArgUserSpecific) == 0) {
+      // If kArgPath was already used, abort.
+      if (path != kPathSystem) {
+        std::cout << std::endl << "ERROR: use --path=<path> after --user";
+        return false;
+      }
       path = kPathUser;
       user_specific = true;
     } else if (arg.find(kArgGroup) == 0) {
@@ -116,6 +124,7 @@ void PrintHelp() {
     << kArgUrl << "<url> : defaults to 'https://upload.example.com'" << std::endl
     << kArgMachineUser << "<machine-user> : defaults to 'DOMAIN\\me'" << std::endl
     << kArgEmail << "<email> : defaults to 'me@example.com'" << std::endl
+    << kArgPath << " <path> : Used the specified path instead of default. Must come after --user." << std::endl
     << kArgUserSpecific << " : Connects to an OS user specific agent" << std::endl
     << kArgDigest << "<digest> : defaults to 'sha256-123456'" << std::endl
     << kArgGroup << " : Generate the same final action for all requests" << std::endl
