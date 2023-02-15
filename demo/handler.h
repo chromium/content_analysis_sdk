@@ -246,9 +246,10 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
                                          request.print_data().size(),
                                          print_data_file_path_);
       if (res == 0) {
-        std::cout << "  Print data save to: " << print_data_file_path_;
+        std::cout << "  Print data save to: "
+                  << print_data_file_path_ << std::endl;
       } else {
-        std::cout << "  Print data failed to save: " << res;
+        std::cout << "  Print data failed to save: " << res << std::endl;
       }
     }
   }
