@@ -198,11 +198,23 @@ target_link_libraries(cac_browser
   protobuf::libprotobuf
   protobuf::libprotobuf-lite)
 
-# The demo agent executable.
+if(WIN)
+  set(DEMO_AGENT_CODE
+    ./demo/demo_utils_win.cc
+  )
+else()
+  set(DEMO_AGENT_CODE
+    ./demo/demo_utils_posix.cc
+  )
+endif()
+
 add_executable(agent
   ./demo/agent.cc
   ./demo/handler.h
+  ./demo/demo_utils.h
+  ${DEMO_AGENT_CODE}
 )
+
 target_include_directories(agent PRIVATE ${AGENT_INCLUDES})
 target_link_libraries(agent PRIVATE cac_agent)
 
