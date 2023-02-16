@@ -37,7 +37,6 @@ class ClientWin : public ClientBase {
   // Performs a clean shutdown of the client.
   void Shutdown();
 
-  std::string pipename_;
   HANDLE hPipe_ = INVALID_HANDLE_VALUE;
 };
 

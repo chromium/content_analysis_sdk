@@ -34,7 +34,6 @@ ClientWin::ClientWin(Config config, int* rc) : ClientBase(std::move(config)) {
     if (ConnectToPipe(pipename, &hPipe_) == ERROR_SUCCESS &&
         GetNamedPipeServerProcessId(hPipe_, &pid) &&
         internal::GetProcessPath(pid, &binary_path)) {
-      pipename_ = pipename;
       agent_info().pid = pid;
       agent_info().binary_path = std::move(binary_path);
       *rc = 0;
