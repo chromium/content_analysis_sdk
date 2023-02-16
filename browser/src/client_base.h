@@ -15,14 +15,17 @@ class ClientBase : public Client {
  public:
   // Client:
   const Config& GetConfig() const override;
+  const AgentInfo& GetAgentInfo() const override;
 
  protected:
   ClientBase(Config config);
 
   const Config& configuration() const { return config_; }
+  AgentInfo& agent_info() { return agent_info_; }
 
 private:
   Config config_;
+  AgentInfo agent_info_;
 };
 
 }  // namespace sdk

@@ -322,6 +322,10 @@ int main(int argc, char* argv[]) {
     return 1;
   };
 
+  auto info = client->GetAgentInfo();
+  std::cout << "Agent pid=" << info.pid
+            << " path=" << info.binary_path << std::endl;
+
   ContentAnalysisAcknowledgement::FinalAction final_action =
       ContentAnalysisAcknowledgement::ALLOW;
   for (int i = 0; i < datas.size(); ++i) {

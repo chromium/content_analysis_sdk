@@ -28,15 +28,21 @@ ClientWin::ClientWin(Config config, int* rc) : ClientBase(std::move(config)) {
 
   std::string pipename =
     internal::GetPipeName(configuration().name, configuration().user_specific);
-  if (pipename.empty()) {
-    return;
+  if (!pipename.empty()) {
+    unsigned long pid;
+    std::string binary_path;
+    if (ConnectToPipe(pipename, &hPipe_) == ERROR_SUCCESS &&
+        GetNamedPipeServerProcessId(hPipe_, &pid) &&
+        internal::GetProcessPath(pid, &binary_path)) {
+      pipename_ = pipename;
+      agent_info().pid = pid;
+      agent_info().binary_path = std::move(binary_path);
+      *rc = 0;
+    }
   }
 
-  pipename_ = pipename;
-  if (ConnectToPipe(pipename_, &hPipe_) != ERROR_SUCCESS) {
+  if (*rc != 0) {
     Shutdown();
-  } else {
-    *rc = 0;
   }
 }
 

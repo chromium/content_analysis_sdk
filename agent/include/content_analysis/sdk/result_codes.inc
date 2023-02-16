@@ -12,7 +12,6 @@ RC_RECOVERABLE(ERR_INVALID_REQUEST_FROM_BROWSER, "The browser sent an incorrectl
 RC_RECOVERABLE(ERR_IO_PENDING, "IO incomplete, the operation is still pending.")
 RC_RECOVERABLE(ERR_MORE_DATA, "There is more data to read before the entire message has been received.")
 RC_RECOVERABLE(ERR_CANNOT_GET_BROWSER_PID, "Cannot get process Id of browser.")
-RC_RECOVERABLE(ERR_CANNOT_OPEN_BROWSER_PROCESS, "Cannot open browser process to extract info.")
 RC_RECOVERABLE(ERR_CANNOT_GET_BROWSER_BINARY_PATH, "Cannot get the full path to the brower's main binary file.")
 RC_RECOVERABLE(ERR_BROKEN_PIPE, "Browser process has disconnected.")
 RC_RECOVERABLE(ERR_UNEXPECTED, "An internal error has occured.")
