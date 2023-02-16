@@ -338,7 +338,8 @@ ResultCode AgentWin::Connection::BuildBrowserInfo() {
 
   if (!internal::GetProcessPath(browser_info_.pid,
                                 &browser_info_.binary_path)) {
-    return ResultCode::ERR_CANNOT_GET_BROWSER_BINARY_PATH;
+    return NotifyIfError("BuildBrowserInfo",
+                         ResultCode::ERR_CANNOT_GET_BROWSER_BINARY_PATH);
   }
 
   return ResultCode::OK;
