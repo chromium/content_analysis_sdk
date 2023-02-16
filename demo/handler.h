@@ -23,9 +23,6 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
  public:
   using Event = content_analysis::sdk::ContentAnalysisEvent;
 
-  std::unique_ptr<Handler> CreateHandler(unsigned long delay,
-                                         const std::string& print_file_path);
-
   Handler(unsigned long delay, const std::string& print_data_file_path) :
       delay_(delay), print_data_file_path_(print_data_file_path) {
   }

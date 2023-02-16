@@ -59,7 +59,7 @@ int ClientWin::Send(ContentAnalysisRequest request,
       request.mutable_print_data()->set_handle(
           reinterpret_cast<int64_t>(dupe_handle));
     } else {
-      return GetLastError();
+      return -1;
     }
   }
 
@@ -174,7 +174,7 @@ bool ClientWin::WriteMessageToPipe(HANDLE pipe, const std::string& message) {
 HANDLE ClientWin::CreateDuplicatePrintDataHandle(HANDLE print_data) {
   // Get a handle to the agent process to be used.
   ULONG process_id;
-  if (hPipe_ != INVALID_HANDLE_VALUE ||
+  if (hPipe_ == INVALID_HANDLE_VALUE ||
       !GetNamedPipeServerProcessId(hPipe_, &process_id)) {
     return nullptr;
   }
@@ -188,18 +188,17 @@ HANDLE ClientWin::CreateDuplicatePrintDataHandle(HANDLE print_data) {
     return nullptr;
 
   HANDLE dupe = nullptr;
-  if (DuplicateHandle(
+  DuplicateHandle(
       /*hSourceProcessHandle=*/GetCurrentProcess(),
       /*hSourceHandle=*/print_data,
       /*hTargetProcessHandle=*/target_process,
       /*lpTargetHandle=*/&dupe,
       /*dwDesiredAccess=*/PROCESS_DUP_HANDLE | FILE_MAP_READ,
       /*bInheritHandle=*/false,
-      /*dwOptions=*/0)) {
-    return dupe;
-  }
+      /*dwOptions=*/0);
 
-  return nullptr;
+  CloseHandle(target_process);
+  return dupe;
 }
 
 void ClientWin::Shutdown() {
