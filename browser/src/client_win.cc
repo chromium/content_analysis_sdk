@@ -29,7 +29,7 @@ ClientWin::ClientWin(Config config, int* rc) : ClientBase(std::move(config)) {
   std::string pipename =
     internal::GetPipeName(configuration().name, configuration().user_specific);
   if (!pipename.empty()) {
-    unsigned long pid;
+    unsigned long pid = 0;
     std::string binary_path;
     if (ConnectToPipe(pipename, &hPipe_) == ERROR_SUCCESS &&
         GetNamedPipeServerProcessId(hPipe_, &pid) &&
