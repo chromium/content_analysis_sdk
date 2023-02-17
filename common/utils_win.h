@@ -41,6 +41,10 @@ DWORD CreatePipe(const std::string& name,
                  bool is_first_pipe,
                  HANDLE* handle);
 
+// Returns the full path to the main binary file of the process with the given
+// process ID.
+bool GetProcessPath(unsigned long pid, std::string* binary_path);
+
 }  // internal
 }  // namespace sdk
 }  // namespace content_analysis

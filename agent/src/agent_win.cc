@@ -336,26 +336,13 @@ ResultCode AgentWin::Connection::BuildBrowserInfo() {
                          ResultCode::ERR_CANNOT_GET_BROWSER_PID);
   }
 
-  HANDLE hProc = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE,
-      browser_info_.pid);
-  if (hProc == nullptr) {
+  if (!internal::GetProcessPath(browser_info_.pid,
+                                &browser_info_.binary_path)) {
     return NotifyIfError("BuildBrowserInfo",
-                         ResultCode::ERR_CANNOT_OPEN_BROWSER_PROCESS);
-  }
-  
-  auto rc = ResultCode::OK;
-  char path[MAX_PATH];
-  DWORD size = sizeof(path);
-  DWORD length = QueryFullProcessImageNameA(hProc, /*flags=*/0, path, &size);
-  if (length == 0) {
-    rc = NotifyIfError("BuildBrowserInfo",
-                       ResultCode::ERR_CANNOT_GET_BROWSER_BINARY_PATH);
+                         ResultCode::ERR_CANNOT_GET_BROWSER_BINARY_PATH);
   }
 
-  CloseHandle(hProc);
-
-  browser_info_.binary_path = path;
-  return rc;
+  return ResultCode::OK;
 }
 
 ResultCode AgentWin::Connection::NotifyIfError(

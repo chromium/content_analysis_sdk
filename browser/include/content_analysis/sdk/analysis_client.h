@@ -20,6 +20,13 @@
 namespace content_analysis {
 namespace sdk {
 
+// Represents information about one instance of a content analysis agent
+// process that is connected to the browser.
+struct AgentInfo {
+  unsigned long pid = 0;  // Process ID of content analysis agent process.
+  std::string binary_path;  // The full path to the process's main binary.
+};
+
 // Represents a client that can request content analysis for locally running
 // agent.  This class holds the client endpoint that the browser connects
 // with when content analysis is required.
@@ -47,6 +54,9 @@ class Client {
 
   // Returns the configuration parameters used to create the client.
   virtual const Config& GetConfig() const = 0;
+
+  // Retrives information about the agent that is connected to the browser.
+  virtual const AgentInfo& GetAgentInfo() const = 0;
 
   // Sends an analysis request to the agent and waits for a response.
   virtual int Send(const ContentAnalysisRequest& request,

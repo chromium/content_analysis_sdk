@@ -96,7 +96,8 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
   void OnBrowserConnected(
       const content_analysis::sdk::BrowserInfo& info) override {
     std::cout << std::endl << "==========" << std::endl;
-    std::cout << "Browser connected pid=" << info.pid << std::endl;
+    std::cout << "Browser connected pid=" << info.pid
+              << " path=" << info.binary_path << std::endl;
   }
 
   void OnBrowserDisconnected(

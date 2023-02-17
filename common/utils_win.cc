@@ -118,6 +118,24 @@ DWORD CreatePipe(
   return err;
 }
 
+bool GetProcessPath(unsigned long pid, std::string* binary_path) {
+  HANDLE hProc = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
+  if (hProc == nullptr) {
+    return false;
+  }
+  
+  char path[MAX_PATH];
+  DWORD size = sizeof(path);
+  DWORD length = QueryFullProcessImageNameA(hProc, /*flags=*/0, path, &size);
+  CloseHandle(hProc);
+  if (length == 0) {
+    return false;
+  }
+
+  *binary_path = path;
+  return true;
+}
+
 }  // internal
 }  // namespace sdk
 }  // namespace content_analysis

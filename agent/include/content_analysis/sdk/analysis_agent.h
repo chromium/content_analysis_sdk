@@ -43,7 +43,7 @@ namespace sdk {
 // Represents information about one instance of a Google Chrome browser
 // process that is connected to the agent.
 struct BrowserInfo {
-  unsigned long pid = 0;  // Process of Google Chrome browser process.
+  unsigned long pid = 0;  // Process ID of Google Chrome browser process.
   std::string binary_path;  // The full path to the process's main binary.
 };
 

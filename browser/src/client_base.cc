@@ -13,5 +13,9 @@ const Client::Config& ClientBase::GetConfig() const {
   return config_;
 }
 
+const AgentInfo& ClientBase::GetAgentInfo() const {
+  return agent_info_;
+}
+
 }  // namespace sdk
 }  // namespace content_analysis
