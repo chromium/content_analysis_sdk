@@ -15,7 +15,6 @@
 
 #include "content_analysis/sdk/analysis_agent.h"
 #include "demo/request_queue.h"
-#include "demo/demo_utils.h"
 
 // An AgentEventHandler that dumps requests information to stdout and blocks
 // any requests that have the keyword "block" in their data
