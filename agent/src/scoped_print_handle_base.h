@@ -13,7 +13,6 @@ namespace sdk {
 class ScopedPrintHandleBase : public ContentAnalysisEvent::ScopedPrintHandle {
  public:
   ScopedPrintHandleBase(const ContentAnalysisRequest::PrintData& print_data);
-  ~ScopedPrintHandleBase();
 
   size_t size() override;
  protected:

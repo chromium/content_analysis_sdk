@@ -102,9 +102,15 @@ class ContentAnalysisEvent {
     static std::unique_ptr<ScopedPrintHandle> Create(
         const ContentAnalysisRequest& request);
 
-    //virtual ~ScopedPrintHandle();
+    virtual ~ScopedPrintHandle() = default;
     virtual const char* data() = 0;
     virtual size_t size() = 0;
+
+   protected:
+    ScopedPrintHandle() = default;
+    ScopedPrintHandle(const ScopedPrintHandle&) = delete;
+    ScopedPrintHandle& operator=(const ScopedPrintHandle&) = delete;
+
   };
 
  protected:

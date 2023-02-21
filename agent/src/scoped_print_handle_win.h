@@ -15,7 +15,7 @@ namespace sdk {
 class ScopedPrintHandleWin : public ScopedPrintHandleBase {
  public:
   ScopedPrintHandleWin(const ContentAnalysisRequest::PrintData& print_data);
-  ~ScopedPrintHandleWin();
+  ~ScopedPrintHandleWin() override;
 
   const char* data() override;
  private:

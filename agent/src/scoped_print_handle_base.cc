@@ -11,8 +11,6 @@ ScopedPrintHandleBase::ScopedPrintHandleBase(
     const ContentAnalysisRequest::PrintData& print_data)
     : size_(print_data.size()) {}
 
-ScopedPrintHandleBase::~ScopedPrintHandleBase() = default;
-
 size_t ScopedPrintHandleBase::size() { return size_; }
 
 }  // namespace sdk

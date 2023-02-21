@@ -172,17 +172,10 @@ bool ClientWin::WriteMessageToPipe(HANDLE pipe, const std::string& message) {
 }
 
 HANDLE ClientWin::CreateDuplicatePrintDataHandle(HANDLE print_data) {
-  // Get a handle to the agent process to be used.
-  ULONG process_id;
-  if (hPipe_ == INVALID_HANDLE_VALUE ||
-      !GetNamedPipeServerProcessId(hPipe_, &process_id)) {
-    return nullptr;
-  }
-
   HANDLE target_process = OpenProcess(
     /*dwDesiredAccess=*/PROCESS_DUP_HANDLE,
     /*bInheritHandle=*/false,
-    /*dwProcessId=*/process_id);
+    /*dwProcessId=*/agent_info().pid);
 
   if (!target_process)
     return nullptr;

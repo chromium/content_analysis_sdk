@@ -13,7 +13,7 @@ namespace sdk {
 class ScopedPrintHandleMac : public ScopedPrintHandleBase {
  public:
   ScopedPrintHandleMac(const ContentAnalysisRequest::PrintData& print_data);
-  ~ScopedPrintHandleMac();
+  ~ScopedPrintHandleMac() override;
 
   const char* data() override;
 };

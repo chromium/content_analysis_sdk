@@ -13,7 +13,7 @@ namespace sdk {
 class ScopedPrintHandlePosix : public ScopedPrintHandleBase {
  public:
   ScopedPrintHandlePosix(const ContentAnalysisRequest::PrintData& print_data);
-  ~ScopedPrintHandlePosix();
+  ~ScopedPrintHandlePosix() override;
 
   const char* data() override;
 };
