@@ -92,6 +92,8 @@ elseif(MAC)
     ./agent/src/agent_mac.h
     ./agent/src/event_mac.cc
     ./agent/src/event_mac.h
+    ./agent/src/scoped_print_handle_mac.cc
+    ./agent/src/scoped_print_handle_mac.h
   )
   set(PLATFORM_TEST_CODE
     ./agent/src/event_mac_unittest.cc
@@ -102,6 +104,8 @@ elseif(LINUX)
     ./agent/src/agent_posix.h
     ./agent/src/event_posix.cc
     ./agent/src/event_posix.h
+    ./agent/src/scoped_print_handle_posix.cc
+    ./agent/src/scoped_print_handle_posix.h
   )
   set(PLATFORM_TEST_CODE
     ./agent/src/event_posix_unittest.cc
