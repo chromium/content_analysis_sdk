@@ -96,6 +96,17 @@ class ContentAnalysisEvent {
   // for debugging.
   virtual std::string DebugString() const = 0;
 
+  // Helper class to handle the lifetime and access of print data.
+  class ScopedPrintHandle {
+   public:
+    static std::unique_ptr<ScopedPrintHandle> Create(
+        const ContentAnalysisRequest& request);
+
+    //virtual ~ScopedPrintHandle();
+    virtual const char* data() = 0;
+    virtual size_t size() = 0;
+  };
+
  protected:
   ContentAnalysisEvent() = default;
   ContentAnalysisEvent(const ContentAnalysisEvent& rhs) = delete;

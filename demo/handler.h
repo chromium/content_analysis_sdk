@@ -15,7 +15,6 @@
 
 #include "content_analysis/sdk/analysis_agent.h"
 #include "demo/request_queue.h"
-#include "demo/demo_utils.h"
 
 // An AgentEventHandler that dumps requests information to stdout and blocks
 // any requests that have the keyword "block" in their data
@@ -239,10 +238,16 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
     std::cout << "  Machine user: " << machine_user << std::endl;
     std::cout << "  Email: " << email << std::endl;
     if (request.has_print_data() && !print_data_file_path_.empty()) {
-      int res = WriteHandleContentToFile((void*)request.print_data().handle(),
-                                         request.print_data().size(),
-                                         print_data_file_path_);
-      }
+      std::cout << "  Print data saved to: " << print_data_file_path_
+                << std::endl;
+      using content_analysis::sdk::ContentAnalysisEvent;
+      auto print_data =
+          ContentAnalysisEvent::ScopedPrintHandle::Create(request);
+      std::ofstream file(print_data_file_path_,
+                         std::ios::out | std::ios::trunc | std::ios::binary);
+      file.write(print_data->data(), print_data->size());
+      file.flush();
+      file.close();
     }
   }
 

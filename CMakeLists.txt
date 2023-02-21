@@ -77,6 +77,8 @@ if(WIN)
     ./agent/src/agent_win.h
     ./agent/src/event_win.cc
     ./agent/src/event_win.h
+    ./agent/src/scoped_print_handle_win.cc
+    ./agent/src/scoped_print_handle_win.h
     ./common/utils_win.cc
     ./common/utils_win.h
   )
@@ -164,6 +166,8 @@ add_library(cac_agent
   ./agent/src/agent_base.h
   ./agent/src/event_base.cc
   ./agent/src/event_base.h
+  ./agent/src/scoped_print_handle_base.cc
+  ./agent/src/scoped_print_handle_base.h
   ${PLATFORM_AGENT_CODE}
   ${PROJECT_BINARY_DIR}/gen/content_analysis/sdk/analysis.pb.cc
 )
@@ -190,23 +194,11 @@ target_link_libraries(cac_browser
   protobuf::libprotobuf
   protobuf::libprotobuf-lite)
 
-if(WIN)
-  set(DEMO_AGENT_CODE
-    ./demo/demo_utils_win.cc
-  )
-else()
-  set(DEMO_AGENT_CODE
-    ./demo/demo_utils_posix.cc
-  )
-endif()
-
+# The demo agent executable.
 add_executable(agent
   ./demo/agent.cc
   ./demo/handler.h
-  ./demo/demo_utils.h
-  ${DEMO_AGENT_CODE}
 )
-
 target_include_directories(agent PRIVATE ${AGENT_INCLUDES})
 target_link_libraries(agent PRIVATE cac_agent)
 
