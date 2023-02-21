@@ -128,9 +128,6 @@ void ContentAnalysisEventWin::Shutdown() {
     FlushFileBuffers(hPipe_);
     hPipe_ = INVALID_HANDLE_VALUE;
   }
-  if (request()->has_print_data()) {
-    CloseHandle(reinterpret_cast<HANDLE>(request()->print_data().handle()));
-  }
 }
 
 }  // namespace sdk
