@@ -125,7 +125,6 @@ class ContentAnalysisEvent {
   ContentAnalysisEvent& operator=(const ContentAnalysisEvent& rhs) = delete;
   ContentAnalysisEvent& operator=(ContentAnalysisEvent&& rhs) = delete;
 
-  bool scoped_print_handle_taken_ = false;
 };
 
 // Agents should implement this interface in order to handle events as needed.
