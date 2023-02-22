@@ -38,7 +38,7 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
 
     std::cout << std::endl << "----------" << std::endl << std::endl;
 
-    DumpRequest(event->GetRequest());
+    DumpEvent(event.get());
 
     bool block = false;
     bool success = true;
@@ -165,8 +165,9 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
               << std::endl;
   }
 
-  void DumpRequest(
-      const content_analysis::sdk::ContentAnalysisRequest& request) {
+  void DumpEvent(Event* event) {
+    const content_analysis::sdk::ContentAnalysisRequest& request =
+        event->GetRequest();
     std::string connector = "<Unknown>";
     if (request.has_analysis_connector()) {
       switch (request.analysis_connector())
@@ -241,8 +242,7 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
       std::cout << "  Print data saved to: " << print_data_file_path_
                 << std::endl;
       using content_analysis::sdk::ContentAnalysisEvent;
-      auto print_data =
-          ContentAnalysisEvent::ScopedPrintHandle::Create(request);
+      auto print_data = event->TakeScopedPrintHandle();
       std::ofstream file(print_data_file_path_,
                          std::ios::out | std::ios::trunc | std::ios::binary);
       file.write(print_data->data(), print_data->size());

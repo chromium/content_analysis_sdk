@@ -7,7 +7,9 @@
 #include <utility>
 
 #include "event_win.h"
+
 #include "agent_utils_win.h"
+#include "scoped_print_handle_win.h"
 
 namespace content_analysis {
 namespace sdk {
@@ -128,6 +130,20 @@ void ContentAnalysisEventWin::Shutdown() {
     FlushFileBuffers(hPipe_);
     hPipe_ = INVALID_HANDLE_VALUE;
   }
+
+  // Taking the print handle here ensures the dupe handle is closed
+  // correctly if needed.
+  auto scoped_handle = TakeScopedPrintHandle();
+}
+
+std::unique_ptr<ContentAnalysisEvent::ScopedPrintHandle>
+ContentAnalysisEventWin::TakeScopedPrintHandle() {
+  if (!GetRequest().has_print_data() || scoped_print_handle_taken_) {
+    return nullptr;
+  }
+
+  scoped_print_handle_taken_ = true;
+  return std::make_unique<ScopedPrintHandleWin>(GetRequest().print_data());
 }
 
 }  // namespace sdk

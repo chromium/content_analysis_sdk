@@ -7,16 +7,6 @@
 namespace content_analysis {
 namespace sdk {
 
-// static
-std::unique_ptr<ContentAnalysisEvent::ScopedPrintHandle>
-ContentAnalysisEvent::ScopedPrintHandle::Create(
-    const ContentAnalysisRequest& request) {
-  if (!request.has_print_data()) {
-    return nullptr;
-  }
-
-  return std::make_unique<ScopedPrintHandlePosix>(request.print_data());
-}
 
 
 ScopedPrintHandlePosix::ScopedPrintHandlePosix(
