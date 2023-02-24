@@ -7,18 +7,6 @@
 namespace content_analysis {
 namespace sdk {
 
-// static
-std::unique_ptr<ContentAnalysisEvent::ScopedPrintHandle>
-ContentAnalysisEvent::ScopedPrintHandle::Create(
-    const ContentAnalysisRequest& request) {
-  if (!request.has_print_data()) {
-    return nullptr;
-  }
-
-  return std::make_unique<ScopedPrintHandleMac>(request.print_data());
-}
-
-
 ScopedPrintHandleMac::ScopedPrintHandleMac(
     const ContentAnalysisRequest::PrintData& print_data)
     : ScopedPrintHandleBase(print_data) {
