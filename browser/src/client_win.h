@@ -34,6 +34,12 @@ class ClientWin : public ClientBase {
   // Writes a string to the pipe. Returns True if successful, else returns False.
   static bool WriteMessageToPipe(HANDLE pipe, const std::string& message);
 
+  // Get a duplicate handle for printed data using DuplicateHandle.
+  // See https://learn.microsoft.com/en-us/windows/win32/api/handleapi/nf-handleapi-duplicatehandle
+  // for details. The target process is the one corresponding to `hPipe_`, and
+  // errors or an invalid `hPipe_` will result in this function returning null.
+  HANDLE CreateDuplicatePrintDataHandle(HANDLE print_data);
+
   // Performs a clean shutdown of the client.
   void Shutdown();
 

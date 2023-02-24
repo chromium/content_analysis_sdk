@@ -77,6 +77,8 @@ if(WIN)
     ./agent/src/agent_win.h
     ./agent/src/event_win.cc
     ./agent/src/event_win.h
+    ./agent/src/scoped_print_handle_win.cc
+    ./agent/src/scoped_print_handle_win.h
     ./common/utils_win.cc
     ./common/utils_win.h
   )
@@ -90,6 +92,8 @@ elseif(MAC)
     ./agent/src/agent_mac.h
     ./agent/src/event_mac.cc
     ./agent/src/event_mac.h
+    ./agent/src/scoped_print_handle_mac.cc
+    ./agent/src/scoped_print_handle_mac.h
   )
   set(PLATFORM_TEST_CODE
     ./agent/src/event_mac_unittest.cc
@@ -100,6 +104,8 @@ elseif(LINUX)
     ./agent/src/agent_posix.h
     ./agent/src/event_posix.cc
     ./agent/src/event_posix.h
+    ./agent/src/scoped_print_handle_posix.cc
+    ./agent/src/scoped_print_handle_posix.h
   )
   set(PLATFORM_TEST_CODE
     ./agent/src/event_posix_unittest.cc
@@ -164,6 +170,8 @@ add_library(cac_agent
   ./agent/src/agent_base.h
   ./agent/src/event_base.cc
   ./agent/src/event_base.h
+  ./agent/src/scoped_print_handle_base.cc
+  ./agent/src/scoped_print_handle_base.h
   ${PLATFORM_AGENT_CODE}
   ${PROJECT_BINARY_DIR}/gen/content_analysis/sdk/analysis.pb.cc
 )

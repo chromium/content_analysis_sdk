@@ -111,15 +111,25 @@ message ContentAnalysisRequest {
   // be reported with device/user identifiable information.
   optional ClientMetadata client_metadata = 12;
 
+  // Data used to transmit print data from the browser.
+  message PrintData {
+    // A platform-specific handle that can be used to access the printed document.
+    optional int64 handle = 1;
+
+    // The size of the data to be printed.
+    optional int64 size = 2;
+  }
+
   oneof content_data {
-    // The text content to analyze in local content analysis request. This field
-    // is mutually exclusive with file_path.
+    // The text content to analyze in local content analysis request.
     string text_content = 13;
 
     // The full path to the file to analyze in local content analysis request.
-    // The path is expressed in a platform dependent way. This field is mutually
-    // exclusive with text_content.
+    // The path is expressed in a platform dependent way.
     string file_path = 14;
+
+    // The to-be-printed page/document in PDF format.
+    PrintData print_data = 18;
   }
 
   // The absolute deadline (seconds since the UTC Epoch time) that Chrome will

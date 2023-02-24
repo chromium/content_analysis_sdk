@@ -49,13 +49,22 @@ ClientWin::~ClientWin() {
   Shutdown();
 }
 
-int ClientWin::Send(const ContentAnalysisRequest& request,
+int ClientWin::Send(ContentAnalysisRequest request,
                     ContentAnalysisResponse* response) {
-  // TODO: could avoid a copy by changing first argument to be
-  // `ContentAnalysisRequest request` and then using std::move() below and at
-  // call site.
+  // Update the handler for printed data before sending the request.
+  if (request.has_print_data()) {
+    HANDLE handle = reinterpret_cast<HANDLE>(request.print_data().handle());
+    HANDLE dupe_handle = CreateDuplicatePrintDataHandle(handle);
+    if (dupe_handle) {
+      request.mutable_print_data()->set_handle(
+          reinterpret_cast<int64_t>(dupe_handle));
+    } else {
+      return -1;
+    }
+  }
+
   ChromeToAgent chrome_to_agent;
-  *chrome_to_agent.mutable_request() = request;
+  *chrome_to_agent.mutable_request() = std::move(request);
   bool success = WriteMessageToPipe(hPipe_,
                                     chrome_to_agent.SerializeAsString());
   if (success) {
@@ -160,6 +169,29 @@ bool ClientWin::WriteMessageToPipe(HANDLE pipe, const std::string& message) {
     return false;
   DWORD written;
   return WriteFile(pipe, message.data(), message.size(), &written, nullptr);
+}
+
+HANDLE ClientWin::CreateDuplicatePrintDataHandle(HANDLE print_data) {
+  HANDLE target_process = OpenProcess(
+    /*dwDesiredAccess=*/PROCESS_DUP_HANDLE,
+    /*bInheritHandle=*/false,
+    /*dwProcessId=*/agent_info().pid);
+
+  if (!target_process)
+    return nullptr;
+
+  HANDLE dupe = nullptr;
+  DuplicateHandle(
+      /*hSourceProcessHandle=*/GetCurrentProcess(),
+      /*hSourceHandle=*/print_data,
+      /*hTargetProcessHandle=*/target_process,
+      /*lpTargetHandle=*/&dupe,
+      /*dwDesiredAccess=*/PROCESS_DUP_HANDLE | FILE_MAP_READ,
+      /*bInheritHandle=*/false,
+      /*dwOptions=*/0);
+
+  CloseHandle(target_process);
+  return dupe;
 }
 
 void ClientWin::Shutdown() {

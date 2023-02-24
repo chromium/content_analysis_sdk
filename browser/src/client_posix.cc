@@ -16,8 +16,8 @@ std::unique_ptr<Client> Client::Create(Config config) {
 
 ClientPosix::ClientPosix(Config config) : ClientBase(std::move(config)) {}
 
-int ClientPosix::Send(const ContentAnalysisRequest& request,
-                    ContentAnalysisResponse* response) {
+int ClientPosix::Send(ContentAnalysisRequest& request,
+                      ContentAnalysisResponse* response) {
   return -1;
 }
 

@@ -16,8 +16,8 @@ class ClientPosix : public ClientBase {
   ClientPosix(Config config);
 
   // Client:
-  int Send(const ContentAnalysisRequest& request,
-                 ContentAnalysisResponse* response) override;
+  int Send(ContentAnalysisRequest request,
+           ContentAnalysisResponse* response) override;
   int Acknowledge(const ContentAnalysisAcknowledgement& ack) override;
   int CancelRequests(const ContentAnalysisCancelRequests& cancel) override;
 };

@@ -59,7 +59,7 @@ class Client {
   virtual const AgentInfo& GetAgentInfo() const = 0;
 
   // Sends an analysis request to the agent and waits for a response.
-  virtual int Send(const ContentAnalysisRequest& request,
+  virtual int Send(ContentAnalysisRequest request,
                    ContentAnalysisResponse* response) = 0;
 
   // Sends an response acknowledgment back to the agent.
