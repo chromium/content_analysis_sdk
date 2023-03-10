@@ -35,7 +35,7 @@ ClientWin::ClientWin(Config config, int* rc) : ClientBase(std::move(config)) {
       agent_info().pid = pid;
 
       // Getting the process path is best effort.
-       *rc = 0;
+      *rc = 0;
       std::string binary_path;
       if (internal::GetProcessPath(pid, &binary_path)) {
         agent_info().binary_path = std::move(binary_path);
