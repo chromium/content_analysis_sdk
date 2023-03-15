@@ -242,7 +242,9 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
       std::cout << "  Print data saved to: " << print_data_file_path_
                 << std::endl;
       using content_analysis::sdk::ContentAnalysisEvent;
-      auto print_data = event->TakeScopedPrintHandle();
+      auto print_data =
+          content_analysis::sdk::CreateScopedPrintHandle(event->GetRequest(),
+                   event->GetBrowserInfo().pid);
       std::ofstream file(print_data_file_path_,
                          std::ios::out | std::ios::trunc | std::ios::binary);
       file.write(print_data->data(), print_data->size());

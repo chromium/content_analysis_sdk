@@ -19,7 +19,6 @@ class ContentAnalysisEventMac : public ContentAnalysisEventBase {
   // ContentAnalysisEvent:
   ResultCode Send() override;
   std::string DebugString() const override;
-  std::unique_ptr<ScopedPrintHandle> TakeScopedPrintHandle() override;
 
   // TODO(rogerta): Fill in implementation.
 };

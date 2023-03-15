@@ -7,6 +7,16 @@
 namespace content_analysis {
 namespace sdk {
 
+std::unique_ptr<ScopedPrintHandle>
+CreateScopedPrintHandle(const ContentAnalysisRequest& request,
+                        int64_t browser_pid) {
+  if (!request.has_print_data() || !request.print_data().has_handle()) {
+    return nullptr;
+  }
+
+  return std::make_unique<ScopedPrintHandleMac>(request.print_data());
+}
+
 ScopedPrintHandleMac::ScopedPrintHandleMac(
     const ContentAnalysisRequest::PrintData& print_data)
     : ScopedPrintHandleBase(print_data) {

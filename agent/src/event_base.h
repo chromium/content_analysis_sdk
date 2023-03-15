@@ -26,8 +26,6 @@ class ContentAnalysisEventBase : public ContentAnalysisEvent {
   AgentToChrome* agent_to_chrome() { return &agent_to_chrome_; }
   ContentAnalysisResponse* response() { return agent_to_chrome()->mutable_response(); }
 
-  bool scoped_print_handle_taken_ = false;
-
 private:
   BrowserInfo browser_info_;
   ContentAnalysisRequest request_;
