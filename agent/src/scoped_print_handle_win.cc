@@ -34,12 +34,16 @@ CreateScopedPrintHandle(const ContentAnalysisRequest& request,
       /*dwDesiredAccess=*/PROCESS_DUP_HANDLE | FILE_MAP_READ,
       /*bInheritHandle=*/false,
       /*dwOptions=*/0);
+
+  CloseHandle(browser_process);
+
   if (!dupe)
     return nullptr;
 
   ContentAnalysisRequest::PrintData dupe_print_data;
   dupe_print_data.set_handle(reinterpret_cast<int64_t>(dupe));
   dupe_print_data.set_size(request.print_data().size());
+
 
   return std::make_unique<ScopedPrintHandleWin>(dupe_print_data);
 }
