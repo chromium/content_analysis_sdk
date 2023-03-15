@@ -10,7 +10,7 @@
 namespace content_analysis {
 namespace sdk {
 
-class ScopedPrintHandleBase : public ContentAnalysisEvent::ScopedPrintHandle {
+class ScopedPrintHandleBase : public ScopedPrintHandle {
  public:
   ScopedPrintHandleBase(const ContentAnalysisRequest::PrintData& print_data);
 

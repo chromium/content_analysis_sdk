@@ -96,28 +96,6 @@ class ContentAnalysisEvent {
   // for debugging.
   virtual std::string DebugString() const = 0;
 
-  // Helper class to handle the lifetime and access of print data.
-  class ScopedPrintHandle {
-   public:
-    virtual ~ScopedPrintHandle() = default;
-    virtual const char* data() = 0;
-    virtual size_t size() = 0;
-
-   protected:
-    ScopedPrintHandle() = default;
-
-    ScopedPrintHandle(const ScopedPrintHandle&) = delete;
-    ScopedPrintHandle& operator=(const ScopedPrintHandle&) = delete;
-
-    ScopedPrintHandle(ScopedPrintHandle&&) = default;
-    ScopedPrintHandle& operator=(ScopedPrintHandle&&) = default;
-  };
-
-  // Returns a `ScopedPrintHandle` initialized from the event's print data
-  // if it exists. This only returns a non-null value at most once to avoid
-  // having duplicate handles initialized.
-  virtual std::unique_ptr<ScopedPrintHandle> TakeScopedPrintHandle() = 0;
-
  protected:
   ContentAnalysisEvent() = default;
   ContentAnalysisEvent(const ContentAnalysisEvent& rhs) = delete;
@@ -280,6 +258,29 @@ ResultCode SetEventVerdictTo(
 //   SetEventVerdictTo(event,
 //                     ContentAnalysisResponse::Result::TriggeredRule::BLOCK);
 ResultCode SetEventVerdictToBlock(ContentAnalysisEvent* event);
+
+// Helper class to handle the lifetime and access of print data.
+class ScopedPrintHandle {
+ public:
+  virtual ~ScopedPrintHandle() = default;
+  virtual const char* data() = 0;
+  virtual size_t size() = 0;
+
+ protected:
+  ScopedPrintHandle() = default;
+
+  ScopedPrintHandle(const ScopedPrintHandle&) = delete;
+  ScopedPrintHandle& operator=(const ScopedPrintHandle&) = delete;
+
+  ScopedPrintHandle(ScopedPrintHandle&&) = default;
+  ScopedPrintHandle& operator=(ScopedPrintHandle&&) = default;
+};
+
+// Returns a `ScopedPrintHandle` initialized from the request's print data
+// if it exists.
+std::unique_ptr<ScopedPrintHandle>
+CreateScopedPrintHandle(const ContentAnalysisRequest& request,
+                        int64_t browser_pid);
 
 }  // namespace sdk
 }  // namespace content_analysis

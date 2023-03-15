@@ -28,7 +28,6 @@ class ContentAnalysisEventWin : public ContentAnalysisEventBase {
   ResultCode Close() override;
   ResultCode Send() override;
   std::string DebugString() const override;
-  std::unique_ptr<ScopedPrintHandle> TakeScopedPrintHandle() override;
 
  private:
   void Shutdown();
