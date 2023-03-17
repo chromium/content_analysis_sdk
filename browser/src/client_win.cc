@@ -3,7 +3,9 @@
 // found in the LICENSE file.
 
 #include <windows.h>
+#include <winternl.h>
 
+#include <memory>
 #include <utility>
 #include <vector>
 
@@ -13,6 +15,8 @@
 
 namespace content_analysis {
 namespace sdk {
+
+using NtCreateFileFn = decltype(&::NtCreateFile);
 
 const DWORD kBufferSize = 4096;
 
@@ -27,7 +31,8 @@ ClientWin::ClientWin(Config config, int* rc) : ClientBase(std::move(config)) {
   *rc = -1;
 
   std::string pipename =
-    internal::GetPipeName(configuration().name, configuration().user_specific);
+    internal::GetPipeNameForClient(configuration().name,
+                                   configuration().user_specific);
   if (!pipename.empty()) {
     unsigned long pid = 0;
     if (ConnectToPipe(pipename, &hPipe_) == ERROR_SUCCESS &&
@@ -92,15 +97,53 @@ int ClientWin::CancelRequests(const ContentAnalysisCancelRequests& cancel) {
 
 // static
 DWORD ClientWin::ConnectToPipe(const std::string& pipename, HANDLE* handle) {
+  // Get a pointer to the NtCreateFile function.  This is required to use
+  // absolute pipe names from the Windows NT Object Manager's namespace.
+  // This protects against "\\.\pipe" symlink being redirected.
+  static NtCreateFileFn fnNtCreateFile = []() {
+    NtCreateFileFn fn = nullptr;
+    HMODULE h = LoadLibraryA("NtDll.dll");
+    if (h != nullptr) {
+      fn = reinterpret_cast<NtCreateFileFn>(GetProcAddress(h, "NtCreateFile"));
+      FreeLibrary(h);
+    }
+    return fn;
+  }();
+  if (fnNtCreateFile == nullptr) {
+    return ERROR_INVALID_FUNCTION;
+  }
+
+  // Convert the path to a wchar_t string.  Pass pipename.size() as the
+  // `cbMultiByte` argument instead of -1 since the terminating null should not
+  // be counted.  NtCreateFile() does not expect the object name to be
+  // terminated.  Note that `buffer` and hence `name` created from it are both
+  // unterminated strings.
+  int wlen = MultiByteToWideChar(CP_ACP, 0, pipename.c_str(), pipename.size(),
+                                 nullptr, 0);
+  if (wlen == 0) {
+    return GetLastError();
+  }
+  std::vector<wchar_t> buffer(wlen);
+  MultiByteToWideChar(CP_ACP, 0, pipename.c_str(), pipename.size(),
+                      buffer.data(), wlen);
+
+  UNICODE_STRING name;
+  name.Buffer = buffer.data();
+  name.Length = wlen * sizeof(wchar_t);  // Length in bytes, not characters.
+  name.MaximumLength = name.Length;
+
+  OBJECT_ATTRIBUTES attr;
+  InitializeObjectAttributes(&attr, &name, OBJ_CASE_INSENSITIVE, nullptr,
+                             nullptr);
+
+  IO_STATUS_BLOCK io;
   HANDLE h = INVALID_HANDLE_VALUE;
   while (h == INVALID_HANDLE_VALUE) {
-    h = CreateFileA(pipename.c_str(),
-                    GENERIC_READ | GENERIC_WRITE,
-                    /*shareMode=*/0,
-                    /*securityAttr=*/nullptr, OPEN_EXISTING,
-                    /*flags=*/0,
-                    /*template=*/nullptr);
-    if (h == INVALID_HANDLE_VALUE) {
+    NTSTATUS sts = fnNtCreateFile(&h, GENERIC_READ | GENERIC_WRITE,
+        &attr, &io, /*AllocationSize=*/nullptr, FILE_ATTRIBUTE_NORMAL,
+        /*ShareAccess=*/0, FILE_OPEN, FILE_NON_DIRECTORY_FILE,
+        /*EaBuffer=*/nullptr, /*EaLength=*/0);
+    if (sts != 0) {  // 0 == STATUS_SUCCESS
       if (GetLastError() != ERROR_PIPE_BUSY) {
         break;
       }

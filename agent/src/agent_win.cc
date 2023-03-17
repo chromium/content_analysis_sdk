@@ -382,8 +382,8 @@ AgentWin::AgentWin(
   }
 
   std::string pipename =
-      internal::GetPipeName(configuration().name,
-                            configuration().user_specific);
+      internal::GetPipeNameForAgent(configuration().name,
+                                    configuration().user_specific);
   if (pipename.empty()) {
     *rc = ResultCode::ERR_INVALID_CHANNEL_NAME;
     return;

@@ -25,7 +25,13 @@ std::string GetUserSID();
 // Returns the name of the pipe that should be used to communicate between
 // the agent and Google Chrome.  If `sid` is non-empty, make the pip name
 // specific to that user.
-std::string GetPipeName(const std::string& base, bool user_specific);
+//
+// GetPipeNameForAgent() is meant to be used in the agent.  The returned
+// path can be used with CreatePipe() below.  GetPipeNameForClient() is meant
+// to be used in the client.  The returned path can only be used with
+// NtCreateFile() and not CreateFile().
+std::string GetPipeNameForAgent(const std::string& base, bool user_specific);
+std::string GetPipeNameForClient(const std::string& base, bool user_specific);
 
 // Creates a named pipe with the give name.  If `is_first_pipe` is true,
 // fail if this is not the first pipe using this name.

@@ -85,7 +85,7 @@ TEST(EventTest, Create_Init_RequestNoRequestToken) {
 TEST(EventTest, Write_BadPipe) {
   HANDLE pipe;
   DWORD err = internal::CreatePipe(
-      internal::GetPipeName("testpipe", false), false, true, &pipe);
+      internal::GetPipeNameForAgent("testpipe", false), false, true, &pipe);
   ASSERT_EQ(ERROR_SUCCESS, err);
   ASSERT_NE(INVALID_HANDLE_VALUE, pipe);
 
