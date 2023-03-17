@@ -5,5 +5,5 @@ It contains an example of how to use the SDK.
 
 Build instructions are available in the main project `README.md`.
 
-On Micosoft Windows, the dummy agent needs to run as Administrator in order to
+On Micosoft Windows, the demo agent needs to run as Administrator in order to
 properly create the pipe used to communicate with the browser.
