@@ -45,7 +45,7 @@ std::string GetUserSID() {
 }
 
 std::string GetPipeName(const std::string& base, bool user_specific) {
-  std::string pipename = "\\\\.\\pipe\\" + base;
+  std::string pipename = "\\\\.\\pipe\\ProtectedPrefix\\Administrators\\" + base;
   if (user_specific) {
     std::string sid = GetUserSID();
     if (sid.empty())
