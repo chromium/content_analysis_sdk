@@ -93,6 +93,7 @@ bool WaitForPipeAvailability(const UNICODE_STRING& path) {
       reinterpret_cast<FILE_PIPE_WAIT_FOR_BUFFER*>(buffer.data());
   wait_buffer->Timeout.QuadPart = kDefaultTimeout;
   wait_buffer->NameLength = pipe_name.Length;
+  wait_buffer->TimeoutSpecified = TRUE;
   std::wcsncpy(wait_buffer->Name, pipe_name.Buffer, wait_buffer->NameLength /
       sizeof(wchar_t));
 
