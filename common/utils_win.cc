@@ -48,13 +48,12 @@ std::string BuildPipeName(const char* prefix,
                           const std::string& base,
                           bool user_specific) {
   std::string pipename = prefix;
-  pipename += "\\ProtectedPrefix\\Administrators\\";
+  pipename += "ProtectedPrefix\\Administrators\\";
   pipename += base;
 
   if (user_specific) {
     std::string sid = GetUserSID();
     if (sid.empty())
-      return std::string();
 
     pipename += "." + sid;
   }
@@ -63,11 +62,11 @@ std::string BuildPipeName(const char* prefix,
 }
 
 std::string GetPipeNameForAgent(const std::string& base, bool user_specific) {
-  return BuildPipeName("\\\\.\\pipe", base, user_specific);
+  return BuildPipeName(kPipePrefixForAgent, base, user_specific);
 }
 
 std::string GetPipeNameForClient(const std::string& base, bool user_specific) {
-  return BuildPipeName("\\Device\\NamedPipe", base, user_specific);
+  return BuildPipeName(kPipePrefixForClient, base, user_specific);
 }
 
 DWORD CreatePipe(

@@ -505,7 +505,7 @@ ResultCode AgentWin::HandleOneEvent(
   auto rc = connection->HandleEvent(wait_handles[index]);
   if (rc != ResultCode::OK) {
     // If `connection` was not listening and there are more than
-    // kNumPipeInstances pipes, delete this connection.  Otherwise
+    // kMinNumListeningPipeInstances pipes, delete this connection.  Otherwise
     // reset it so that it becomes a listener.
     if (!was_listening &&
       connections_.size() > kMinNumListeningPipeInstances) {
@@ -516,8 +516,9 @@ ResultCode AgentWin::HandleOneEvent(
   }
 
   // If `connection` was listening and is now connected, create a new
-  // one so that there are always kNumPipeInstances listening.
+  // one so that there are always kMinNumListeningPipeInstances listening.
   if (rc == ResultCode::OK && was_listening && connection->IsConnected()) {
+    Sleep(120000);
     connections_.emplace_back(
         std::make_unique<Connection>(pipename_, configuration().user_specific,
                                      handler(), false, &rc));

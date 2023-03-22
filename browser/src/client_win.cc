@@ -5,6 +5,7 @@
 #include <windows.h>
 #include <winternl.h>
 
+#include <cstring>
 #include <memory>
 #include <utility>
 #include <vector>
@@ -16,9 +17,107 @@
 namespace content_analysis {
 namespace sdk {
 
+const DWORD kBufferSize = 4096;
+
+// Use the same default timeout value (50ms) as CreateNamedPipeA(), expressed
+// in 100ns intervals.
+constexpr LONGLONG kDefaultTimeout = 500000;
+
+// The following #defines and struct are copied from the official Microsoft
+// Windows Driver Kit headers because there are not available in the official
+// Microsoft Windows user mode SDK headers.
+
+#define FSCTL_PIPE_WAIT 0x110018
+#define STATUS_SUCCESS 0
+#define STATUS_PIPE_NOT_AVAILABLE 0xC00000AC
+
+typedef struct _FILE_PIPE_WAIT_FOR_BUFFER {
+  LARGE_INTEGER Timeout;
+  ULONG NameLength;
+  BOOLEAN TimeoutSpecified;
+  WCHAR Name[1];
+} FILE_PIPE_WAIT_FOR_BUFFER, *PFILE_PIPE_WAIT_FOR_BUFFER;
+
+namespace {
+
 using NtCreateFileFn = decltype(&::NtCreateFile);
 
-const DWORD kBufferSize = 4096;
+NtCreateFileFn GetNtCreateFileFn() {
+  // Get a pointer to the NtCreateFile function.  This is required to use
+  // absolute pipe names from the Windows NT Object Manager's namespace.
+  // This protects against "\\.\pipe" symlink being redirected.
+  static NtCreateFileFn fnNtCreateFile = []() {
+    NtCreateFileFn fn = nullptr;
+    HMODULE h = LoadLibraryA("NtDll.dll");
+    if (h != nullptr) {
+      fn = reinterpret_cast<NtCreateFileFn>(GetProcAddress(h, "NtCreateFile"));
+      FreeLibrary(h);
+    }
+    return fn;
+  }();
+
+  return fnNtCreateFile;
+}
+
+bool WaitForPipeAvailability(const UNICODE_STRING& path) {
+  NtCreateFileFn fnNtCreateFile = GetNtCreateFileFn();
+  if (fnNtCreateFile == nullptr) {
+    return false;
+  }
+
+  // Build the device name.  This is the initial part of `path` which is
+  // assumed to start with the string `kPipePrefixForClient`.  The `Length`
+  // field is measured in bytes, not characters, and does not include the null
+  // terminator.  It's important that the device name ends with a trailing
+  // backslash.
+  size_t device_name_char_length = std::strlen(internal::kPipePrefixForClient);
+  UNICODE_STRING device_name;
+  device_name.Buffer = path.Buffer;
+  device_name.Length = device_name_char_length * sizeof(wchar_t);
+  device_name.MaximumLength = device_name.Length;
+
+  // Build the pipe name.  This is the remaining part of `path` after the device
+  // name.
+  UNICODE_STRING pipe_name;
+  pipe_name.Buffer = path.Buffer + device_name_char_length;
+  pipe_name.Length = path.Length - device_name.Length;
+  pipe_name.MaximumLength = pipe_name.Length;
+
+  // Build the ioctl input buffer.  This buffer is the size of
+  // FILE_PIPE_WAIT_FOR_BUFFER plus the length of the pipe name.  Since
+  // FILE_PIPE_WAIT_FOR_BUFFER includes one WCHAR this includes space for
+  // the terminating null character of the name which wcsncpy() copies.
+  size_t buffer_size = sizeof(FILE_PIPE_WAIT_FOR_BUFFER) + pipe_name.Length;
+  std::vector<char> buffer(buffer_size);
+  FILE_PIPE_WAIT_FOR_BUFFER* wait_buffer =
+      reinterpret_cast<FILE_PIPE_WAIT_FOR_BUFFER*>(buffer.data());
+  wait_buffer->Timeout.QuadPart = kDefaultTimeout;
+  wait_buffer->NameLength = pipe_name.Length;
+  std::wcsncpy(wait_buffer->Name, pipe_name.Buffer, wait_buffer->NameLength /
+      sizeof(wchar_t));
+
+  OBJECT_ATTRIBUTES attr;
+  InitializeObjectAttributes(&attr, &device_name, OBJ_CASE_INSENSITIVE, nullptr,
+                             nullptr);
+
+  IO_STATUS_BLOCK io;
+  HANDLE h = INVALID_HANDLE_VALUE;
+  NTSTATUS sts = fnNtCreateFile(&h, GENERIC_READ | GENERIC_WRITE,
+      &attr, &io, /*AllocationSize=*/nullptr, FILE_ATTRIBUTE_NORMAL,
+      FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, FILE_OPEN,
+      /*CreateOptions=*/0, /*EaBuffer=*/nullptr, /*EaLength=*/0);
+  if (sts != 0) {
+    return false;
+  }
+
+  DWORD size;
+  BOOL ok = DeviceIoControl(h, FSCTL_PIPE_WAIT, buffer.data(), buffer.size(),
+      nullptr, 0, &size, nullptr);
+  CloseHandle(h);
+  return ok;
+}
+
+}  // namespace
 
 // static
 std::unique_ptr<Client> Client::Create(Config config) {
@@ -97,18 +196,7 @@ int ClientWin::CancelRequests(const ContentAnalysisCancelRequests& cancel) {
 
 // static
 DWORD ClientWin::ConnectToPipe(const std::string& pipename, HANDLE* handle) {
-  // Get a pointer to the NtCreateFile function.  This is required to use
-  // absolute pipe names from the Windows NT Object Manager's namespace.
-  // This protects against "\\.\pipe" symlink being redirected.
-  static NtCreateFileFn fnNtCreateFile = []() {
-    NtCreateFileFn fn = nullptr;
-    HMODULE h = LoadLibraryA("NtDll.dll");
-    if (h != nullptr) {
-      fn = reinterpret_cast<NtCreateFileFn>(GetProcAddress(h, "NtCreateFile"));
-      FreeLibrary(h);
-    }
-    return fn;
-  }();
+  NtCreateFileFn fnNtCreateFile = GetNtCreateFileFn();
   if (fnNtCreateFile == nullptr) {
     return ERROR_INVALID_FUNCTION;
   }
@@ -143,12 +231,13 @@ DWORD ClientWin::ConnectToPipe(const std::string& pipename, HANDLE* handle) {
         &attr, &io, /*AllocationSize=*/nullptr, FILE_ATTRIBUTE_NORMAL,
         /*ShareAccess=*/0, FILE_OPEN, FILE_NON_DIRECTORY_FILE,
         /*EaBuffer=*/nullptr, /*EaLength=*/0);
-    if (sts != 0) {  // 0 == STATUS_SUCCESS
-      if (GetLastError() != ERROR_PIPE_BUSY) {
+    if (sts != STATUS_SUCCESS) {
+      if (sts != STATUS_PIPE_NOT_AVAILABLE) {
+        SetLastError(HRESULT_FROM_NT(sts));
         break;
       }
 
-      if (!WaitNamedPipeA(pipename.c_str(), NMPWAIT_USE_DEFAULT_WAIT)) {
+      if (!WaitForPipeAvailability(name)) {
         break;
       }
     }
