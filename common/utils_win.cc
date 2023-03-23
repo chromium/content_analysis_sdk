@@ -54,6 +54,7 @@ std::string BuildPipeName(const char* prefix,
   if (user_specific) {
     std::string sid = GetUserSID();
     if (sid.empty())
+      return std::string();
 
     pipename += "." + sid;
   }

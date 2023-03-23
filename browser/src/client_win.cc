@@ -24,12 +24,13 @@ const DWORD kBufferSize = 4096;
 constexpr LONGLONG kDefaultTimeout = 500000;
 
 // The following #defines and struct are copied from the official Microsoft
-// Windows Driver Kit headers because there are not available in the official
+// Windows Driver Kit headers because they are not available in the official
 // Microsoft Windows user mode SDK headers.
 
 #define FSCTL_PIPE_WAIT 0x110018
 #define STATUS_SUCCESS 0
-#define STATUS_PIPE_NOT_AVAILABLE 0xC00000AC
+#define STATUS_PIPE_NOT_AVAILABLE 0xc00000ac
+#define STATUS_IO_TIMEOUT 0xc00000b5
 
 typedef struct _FILE_PIPE_WAIT_FOR_BUFFER {
   LARGE_INTEGER Timeout;
@@ -43,9 +44,6 @@ namespace {
 using NtCreateFileFn = decltype(&::NtCreateFile);
 
 NtCreateFileFn GetNtCreateFileFn() {
-  // Get a pointer to the NtCreateFile function.  This is required to use
-  // absolute pipe names from the Windows NT Object Manager's namespace.
-  // This protects against "\\.\pipe" symlink being redirected.
   static NtCreateFileFn fnNtCreateFile = []() {
     NtCreateFileFn fn = nullptr;
     HMODULE h = LoadLibraryA("NtDll.dll");
@@ -59,9 +57,40 @@ NtCreateFileFn GetNtCreateFileFn() {
   return fnNtCreateFile;
 }
 
-bool WaitForPipeAvailability(const UNICODE_STRING& path) {
+
+using NtFsControlFileFn = NTSTATUS (NTAPI *)(
+    HANDLE FileHandle,
+    HANDLE Event,
+    PIO_APC_ROUTINE ApcRoutine,
+    PVOID ApcContext,
+    PIO_STATUS_BLOCK IoStatusBlock,
+    ULONG IoControlCode,
+    PVOID InputBuffer,
+    ULONG InputBufferLength,
+    PVOID OutputBuffer,
+    ULONG OutputBufferLength);
+
+NtFsControlFileFn GetNtFsControlFileFn() {
+  static NtFsControlFileFn fnNtFsControlFile = []() {
+    NtFsControlFileFn fn = nullptr;
+    HMODULE h = LoadLibraryA("NtDll.dll");
+    if (h != nullptr) {
+      fn = reinterpret_cast<NtFsControlFileFn>(GetProcAddress(h, "NtFsControlFile"));
+      FreeLibrary(h);
+    }
+    return fn;
+  }();
+
+  return fnNtFsControlFile;
+}
+
+NTSTATUS WaitForPipeAvailability(const UNICODE_STRING& path) {
   NtCreateFileFn fnNtCreateFile = GetNtCreateFileFn();
   if (fnNtCreateFile == nullptr) {
+    return false;
+  }
+  NtFsControlFileFn fnNtFsControlFile = GetNtFsControlFileFn();
+  if (fnNtFsControlFile == nullptr) {
     return false;
   }
 
@@ -103,19 +132,20 @@ bool WaitForPipeAvailability(const UNICODE_STRING& path) {
 
   IO_STATUS_BLOCK io;
   HANDLE h = INVALID_HANDLE_VALUE;
-  NTSTATUS sts = fnNtCreateFile(&h, GENERIC_READ | GENERIC_WRITE,
+  NTSTATUS sts = fnNtCreateFile(&h, GENERIC_READ | GENERIC_WRITE | SYNCHRONIZE,
       &attr, &io, /*AllocationSize=*/nullptr, FILE_ATTRIBUTE_NORMAL,
       FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, FILE_OPEN,
-      /*CreateOptions=*/0, /*EaBuffer=*/nullptr, /*EaLength=*/0);
-  if (sts != 0) {
+      FILE_SYNCHRONOUS_IO_NONALERT, /*EaBuffer=*/nullptr, /*EaLength=*/0);
+  if (sts != STATUS_SUCCESS) {
     return false;
   }
 
-  DWORD size;
-  BOOL ok = DeviceIoControl(h, FSCTL_PIPE_WAIT, buffer.data(), buffer.size(),
-      nullptr, 0, &size, nullptr);
+  IO_STATUS_BLOCK io2;
+  sts = fnNtFsControlFile(h, /*Event=*/nullptr, /*ApcRoutine=*/nullptr,
+      /*ApcContext*/nullptr, &io2, FSCTL_PIPE_WAIT, buffer.data(),
+      buffer.size(), nullptr, 0);
   CloseHandle(h);
-  return ok;
+  return sts;
 }
 
 }  // namespace
@@ -197,6 +227,10 @@ int ClientWin::CancelRequests(const ContentAnalysisCancelRequests& cancel) {
 
 // static
 DWORD ClientWin::ConnectToPipe(const std::string& pipename, HANDLE* handle) {
+  // Get pointers to the Ntxxx functions.  This is required to use absolute
+  // pipe names from the Windows NT Object Manager's namespace. This protects
+  // against the "\\.\pipe" symlink being redirected.
+
   NtCreateFileFn fnNtCreateFile = GetNtCreateFileFn();
   if (fnNtCreateFile == nullptr) {
     return ERROR_INVALID_FUNCTION;
@@ -234,11 +268,12 @@ DWORD ClientWin::ConnectToPipe(const std::string& pipename, HANDLE* handle) {
         /*EaBuffer=*/nullptr, /*EaLength=*/0);
     if (sts != STATUS_SUCCESS) {
       if (sts != STATUS_PIPE_NOT_AVAILABLE) {
-        SetLastError(HRESULT_FROM_NT(sts));
+        SetLastError(sts);
         break;
       }
 
-      if (!WaitForPipeAvailability(name)) {
+      sts = WaitForPipeAvailability(name);
+      if (sts != STATUS_SUCCESS && sts != STATUS_IO_TIMEOUT) {
         break;
       }
     }
