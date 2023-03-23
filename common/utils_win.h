@@ -19,8 +19,8 @@ namespace internal {
 const DWORD kBufferSize = 4096;
 
 // Named pipe prefixes used for agent and client side of pipe.
-constexpr char kPipePrefixForAgent[] = "\\\\.\\pipe\\";
-constexpr char kPipePrefixForClient[] = "\\Device\\NamedPipe\\";
+constexpr char kPipePrefixForAgent[] = R"(\\.\\pipe\)";
+constexpr char kPipePrefixForClient[] = R"(\Device\NamedPipe\)";
 
 // Returns the user SID of the thread or process that calls thie function.
 // Returns an empty string on error.
