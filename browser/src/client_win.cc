@@ -28,9 +28,9 @@ constexpr LONGLONG kDefaultTimeout = 500000;
 // Microsoft Windows user mode SDK headers.
 
 #define FSCTL_PIPE_WAIT 0x110018
-#define STATUS_SUCCESS 0
-#define STATUS_PIPE_NOT_AVAILABLE 0xc00000ac
-#define STATUS_IO_TIMEOUT 0xc00000b5
+#define STATUS_SUCCESS ((NTSTATUS)0)
+#define STATUS_PIPE_NOT_AVAILABLE ((NTSTATUS)0xc00000ac)
+#define STATUS_IO_TIMEOUT ((NTSTATUS)0xc00000b5)
 
 typedef struct _FILE_PIPE_WAIT_FOR_BUFFER {
   LARGE_INTEGER Timeout;
