@@ -3,7 +3,10 @@
 // found in the LICENSE file.
 
 #include <windows.h>
+#include <winternl.h>
 
+#include <cstring>
+#include <memory>
 #include <utility>
 #include <vector>
 
@@ -16,6 +19,137 @@ namespace sdk {
 
 const DWORD kBufferSize = 4096;
 
+// Use the same default timeout value (50ms) as CreateNamedPipeA(), expressed
+// in 100ns intervals.
+constexpr LONGLONG kDefaultTimeout = 500000;
+
+// The following #defines and struct are copied from the official Microsoft
+// Windows Driver Kit headers because they are not available in the official
+// Microsoft Windows user mode SDK headers.
+
+#define FSCTL_PIPE_WAIT 0x110018
+#define STATUS_SUCCESS 0
+#define STATUS_PIPE_NOT_AVAILABLE 0xc00000ac
+#define STATUS_IO_TIMEOUT 0xc00000b5
+
+typedef struct _FILE_PIPE_WAIT_FOR_BUFFER {
+  LARGE_INTEGER Timeout;
+  ULONG NameLength;
+  BOOLEAN TimeoutSpecified;
+  WCHAR Name[1];
+} FILE_PIPE_WAIT_FOR_BUFFER, *PFILE_PIPE_WAIT_FOR_BUFFER;
+
+namespace {
+
+using NtCreateFileFn = decltype(&::NtCreateFile);
+
+NtCreateFileFn GetNtCreateFileFn() {
+  static NtCreateFileFn fnNtCreateFile = []() {
+    NtCreateFileFn fn = nullptr;
+    HMODULE h = LoadLibraryA("NtDll.dll");
+    if (h != nullptr) {
+      fn = reinterpret_cast<NtCreateFileFn>(GetProcAddress(h, "NtCreateFile"));
+      FreeLibrary(h);
+    }
+    return fn;
+  }();
+
+  return fnNtCreateFile;
+}
+
+
+using NtFsControlFileFn = NTSTATUS (NTAPI *)(
+    HANDLE FileHandle,
+    HANDLE Event,
+    PIO_APC_ROUTINE ApcRoutine,
+    PVOID ApcContext,
+    PIO_STATUS_BLOCK IoStatusBlock,
+    ULONG IoControlCode,
+    PVOID InputBuffer,
+    ULONG InputBufferLength,
+    PVOID OutputBuffer,
+    ULONG OutputBufferLength);
+
+NtFsControlFileFn GetNtFsControlFileFn() {
+  static NtFsControlFileFn fnNtFsControlFile = []() {
+    NtFsControlFileFn fn = nullptr;
+    HMODULE h = LoadLibraryA("NtDll.dll");
+    if (h != nullptr) {
+      fn = reinterpret_cast<NtFsControlFileFn>(GetProcAddress(h, "NtFsControlFile"));
+      FreeLibrary(h);
+    }
+    return fn;
+  }();
+
+  return fnNtFsControlFile;
+}
+
+NTSTATUS WaitForPipeAvailability(const UNICODE_STRING& path) {
+  NtCreateFileFn fnNtCreateFile = GetNtCreateFileFn();
+  if (fnNtCreateFile == nullptr) {
+    return false;
+  }
+  NtFsControlFileFn fnNtFsControlFile = GetNtFsControlFileFn();
+  if (fnNtFsControlFile == nullptr) {
+    return false;
+  }
+
+  // Build the device name.  This is the initial part of `path` which is
+  // assumed to start with the string `kPipePrefixForClient`.  The `Length`
+  // field is measured in bytes, not characters, and does not include the null
+  // terminator.  It's important that the device name ends with a trailing
+  // backslash.
+  size_t device_name_char_length = std::strlen(internal::kPipePrefixForClient);
+  UNICODE_STRING device_name;
+  device_name.Buffer = path.Buffer;
+  device_name.Length = device_name_char_length * sizeof(wchar_t);
+  device_name.MaximumLength = device_name.Length;
+
+  // Build the pipe name.  This is the remaining part of `path` after the device
+  // name.
+  UNICODE_STRING pipe_name;
+  pipe_name.Buffer = path.Buffer + device_name_char_length;
+  pipe_name.Length = path.Length - device_name.Length;
+  pipe_name.MaximumLength = pipe_name.Length;
+
+  // Build the ioctl input buffer.  This buffer is the size of
+  // FILE_PIPE_WAIT_FOR_BUFFER plus the length of the pipe name.  Since
+  // FILE_PIPE_WAIT_FOR_BUFFER includes one WCHAR this includes space for
+  // the terminating null character of the name which wcsncpy() copies.
+  size_t buffer_size = sizeof(FILE_PIPE_WAIT_FOR_BUFFER) + pipe_name.Length;
+  std::vector<char> buffer(buffer_size);
+  FILE_PIPE_WAIT_FOR_BUFFER* wait_buffer =
+      reinterpret_cast<FILE_PIPE_WAIT_FOR_BUFFER*>(buffer.data());
+  wait_buffer->Timeout.QuadPart = kDefaultTimeout;
+  wait_buffer->NameLength = pipe_name.Length;
+  wait_buffer->TimeoutSpecified = TRUE;
+  std::wcsncpy(wait_buffer->Name, pipe_name.Buffer, wait_buffer->NameLength /
+      sizeof(wchar_t));
+
+  OBJECT_ATTRIBUTES attr;
+  InitializeObjectAttributes(&attr, &device_name, OBJ_CASE_INSENSITIVE, nullptr,
+                             nullptr);
+
+  IO_STATUS_BLOCK io;
+  HANDLE h = INVALID_HANDLE_VALUE;
+  NTSTATUS sts = fnNtCreateFile(&h, GENERIC_READ | GENERIC_WRITE | SYNCHRONIZE,
+      &attr, &io, /*AllocationSize=*/nullptr, FILE_ATTRIBUTE_NORMAL,
+      FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, FILE_OPEN,
+      FILE_SYNCHRONOUS_IO_NONALERT, /*EaBuffer=*/nullptr, /*EaLength=*/0);
+  if (sts != STATUS_SUCCESS) {
+    return false;
+  }
+
+  IO_STATUS_BLOCK io2;
+  sts = fnNtFsControlFile(h, /*Event=*/nullptr, /*ApcRoutine=*/nullptr,
+      /*ApcContext*/nullptr, &io2, FSCTL_PIPE_WAIT, buffer.data(),
+      buffer.size(), nullptr, 0);
+  CloseHandle(h);
+  return sts;
+}
+
+}  // namespace
+
 // static
 std::unique_ptr<Client> Client::Create(Config config) {
   int rc;
@@ -27,7 +161,8 @@ ClientWin::ClientWin(Config config, int* rc) : ClientBase(std::move(config)) {
   *rc = -1;
 
   std::string pipename =
-    internal::GetPipeName(configuration().name, configuration().user_specific);
+    internal::GetPipeNameForClient(configuration().name,
+                                   configuration().user_specific);
   if (!pipename.empty()) {
     unsigned long pid = 0;
     if (ConnectToPipe(pipename, &hPipe_) == ERROR_SUCCESS &&
@@ -92,20 +227,53 @@ int ClientWin::CancelRequests(const ContentAnalysisCancelRequests& cancel) {
 
 // static
 DWORD ClientWin::ConnectToPipe(const std::string& pipename, HANDLE* handle) {
+  // Get pointers to the Ntxxx functions.  This is required to use absolute
+  // pipe names from the Windows NT Object Manager's namespace. This protects
+  // against the "\\.\pipe" symlink being redirected.
+
+  NtCreateFileFn fnNtCreateFile = GetNtCreateFileFn();
+  if (fnNtCreateFile == nullptr) {
+    return ERROR_INVALID_FUNCTION;
+  }
+
+  // Convert the path to a wchar_t string.  Pass pipename.size() as the
+  // `cbMultiByte` argument instead of -1 since the terminating null should not
+  // be counted.  NtCreateFile() does not expect the object name to be
+  // terminated.  Note that `buffer` and hence `name` created from it are both
+  // unterminated strings.
+  int wlen = MultiByteToWideChar(CP_ACP, 0, pipename.c_str(), pipename.size(),
+                                 nullptr, 0);
+  if (wlen == 0) {
+    return GetLastError();
+  }
+  std::vector<wchar_t> buffer(wlen);
+  MultiByteToWideChar(CP_ACP, 0, pipename.c_str(), pipename.size(),
+                      buffer.data(), wlen);
+
+  UNICODE_STRING name;
+  name.Buffer = buffer.data();
+  name.Length = wlen * sizeof(wchar_t);  // Length in bytes, not characters.
+  name.MaximumLength = name.Length;
+
+  OBJECT_ATTRIBUTES attr;
+  InitializeObjectAttributes(&attr, &name, OBJ_CASE_INSENSITIVE, nullptr,
+                             nullptr);
+
+  IO_STATUS_BLOCK io;
   HANDLE h = INVALID_HANDLE_VALUE;
   while (h == INVALID_HANDLE_VALUE) {
-    h = CreateFileA(pipename.c_str(),
-                    GENERIC_READ | GENERIC_WRITE,
-                    /*shareMode=*/0,
-                    /*securityAttr=*/nullptr, OPEN_EXISTING,
-                    /*flags=*/0,
-                    /*template=*/nullptr);
-    if (h == INVALID_HANDLE_VALUE) {
-      if (GetLastError() != ERROR_PIPE_BUSY) {
+    NTSTATUS sts = fnNtCreateFile(&h, GENERIC_READ | GENERIC_WRITE,
+        &attr, &io, /*AllocationSize=*/nullptr, FILE_ATTRIBUTE_NORMAL,
+        /*ShareAccess=*/0, FILE_OPEN, FILE_NON_DIRECTORY_FILE,
+        /*EaBuffer=*/nullptr, /*EaLength=*/0);
+    if (sts != STATUS_SUCCESS) {
+      if (sts != STATUS_PIPE_NOT_AVAILABLE) {
+        SetLastError(sts);
         break;
       }
 
-      if (!WaitNamedPipeA(pipename.c_str(), NMPWAIT_USE_DEFAULT_WAIT)) {
+      sts = WaitForPipeAvailability(name);
+      if (sts != STATUS_SUCCESS && sts != STATUS_IO_TIMEOUT) {
         break;
       }
     }

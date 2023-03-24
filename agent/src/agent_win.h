@@ -182,8 +182,8 @@ private:
   std::string pipename_;
 
   // A list of pipes to already connected Google Chrome browsers.
-  // The first kNumPipeInstances pipes in the list correspond to listening
-  // pipes.
+  // The first kMinNumListeningPipeInstances pipes in the list correspond to
+  // listening pipes.
   std::vector<std::unique_ptr<Connection>> connections_;
 
   // An event that is set when the agent should stop.  Set in Stop().
