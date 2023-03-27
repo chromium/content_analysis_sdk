@@ -41,7 +41,20 @@ message ContentMetaData {
   // Name of tab title.
   optional string tab_title = 9;
 
-  reserved 6 to 8;
+  // Empty for non-print actions.
+  message PrintMetadata {
+    optional string printer_name = 1;
+
+    enum PrinterType {
+      UNKNOWN = 0;
+      CLOUD = 1;
+      LOCAL = 2;
+    }
+    optional PrinterType printer_type = 2;
+  }
+  optional PrintMetadata print_metadata = 11;
+
+  reserved 6 to 8, 10;
 }
 
 message ClientMetadata {
@@ -83,7 +96,7 @@ message ClientDownloadRequest {
 
     reserved 3 to 4;
   }
-    
+
   repeated Resource resources = 4;
 
   reserved 1 to 3, 5 to 84;
