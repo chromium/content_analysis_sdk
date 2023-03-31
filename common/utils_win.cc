@@ -48,7 +48,13 @@ std::string BuildPipeName(const char* prefix,
                           const std::string& base,
                           bool user_specific) {
   std::string pipename = prefix;
-  pipename += "ProtectedPrefix\\Administrators\\";
+
+  // If the agent is not user-specific, the assumption is that it runs with
+  // administrator provileges.  Create the pipe in a location only available
+  // to administrators.
+  if (!user_specific)
+    pipename += "ProtectedPrefix\\Administrators\\";
+
   pipename += base;
 
   if (user_specific) {
