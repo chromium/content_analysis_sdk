@@ -262,9 +262,10 @@ DWORD ClientWin::ConnectToPipe(const std::string& pipename, HANDLE* handle) {
   IO_STATUS_BLOCK io;
   HANDLE h = INVALID_HANDLE_VALUE;
   while (h == INVALID_HANDLE_VALUE) {
-    NTSTATUS sts = fnNtCreateFile(&h, GENERIC_READ | GENERIC_WRITE,
-        &attr, &io, /*AllocationSize=*/nullptr, FILE_ATTRIBUTE_NORMAL,
-        /*ShareAccess=*/0, FILE_OPEN, FILE_NON_DIRECTORY_FILE,
+    NTSTATUS sts = fnNtCreateFile(&h, GENERIC_READ | GENERIC_WRITE |
+        SYNCHRONIZE, &attr, &io, /*AllocationSize=*/nullptr,
+        FILE_ATTRIBUTE_NORMAL, /*ShareAccess=*/0, FILE_OPEN,
+        FILE_NON_DIRECTORY_FILE | FILE_SYNCHRONOUS_IO_NONALERT,
         /*EaBuffer=*/nullptr, /*EaLength=*/0);
     if (sts != STATUS_SUCCESS) {
       if (sts != STATUS_PIPE_NOT_AVAILABLE) {
