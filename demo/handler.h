@@ -166,6 +166,9 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
   }
 
   void DumpEvent(Event* event) {
+    time_t now = time(nullptr);
+    std::cout << "Received at: " << ctime(&now);  // Returned string includes \n.
+
     const content_analysis::sdk::ContentAnalysisRequest& request =
         event->GetRequest();
     std::string connector = "<Unknown>";
@@ -223,13 +226,18 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
       ? request.request_data().email() : "<No email>";
 
     time_t t = request.expires_at();
+    std::string expires_at_str = ctime(&t);
+    // Returned string includes trailing \n, overwrite with null.
+    expires_at_str[expires_at_str.size() - 1] = 0;
+    time_t secs_remaining = t - now;
 
     std::string user_action_id = request.has_user_action_id()
         ? request.user_action_id() : "<No user action id>";
 
     std::cout << "Request: " << request.request_token() << std::endl;
     std::cout << "  User action ID: " << user_action_id << std::endl;
-    std::cout << "  Expires at: " << ctime(&t);  // Returned string includes \n.
+    std::cout << "  Expires at: " << expires_at_str << " ("
+              << secs_remaining << " seconds from now)" << std::endl;
     std::cout << "  Connector: " << connector << std::endl;
     std::cout << "  URL: " << url << std::endl;
     std::cout << "  Tab title: " << tab_title << std::endl;
