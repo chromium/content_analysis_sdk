@@ -83,7 +83,7 @@ int main(int argc, char* argv[]) {
   }
 
   auto handler = use_queue
-      ? std::make_unique<QueuingHandler>(delay, save_print_data_path)
+      ? std::make_unique<QueuingHandler>(8u, delay, save_print_data_path)
       : std::make_unique<Handler>(delay, save_print_data_path);
 
   // Each agent uses a unique name to identify itself with Google Chrome.

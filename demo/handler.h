@@ -12,8 +12,10 @@
 #include <iostream>
 #include <thread>
 #include <utility>
+#include <vector>
 
 #include "content_analysis/sdk/analysis_agent.h"
+#include "demo/atomic_output.h"
 #include "demo/request_queue.h"
 
 // An AgentEventHandler that dumps requests information to stdout and blocks
@@ -29,16 +31,14 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
  protected:
   // Analyzes one request from Google Chrome and responds back to the browser
   // with either an allow or block verdict.
-  void AnalyzeContent(std::unique_ptr<Event> event) {
+  void AnalyzeContent(std::stringstream& stream, std::unique_ptr<Event> event) {
     // An event represents one content analysis request and response triggered
     // by a user action in Google Chrome.  The agent determines whether the
     // user is allowed to perform the action by examining event->GetRequest().
     // The verdict, which can be "allow" or "block" is written into
     // event->GetResponse().
 
-    std::cout << std::endl << "----------" << std::endl << std::endl;
-
-    DumpEvent(event.get());
+    DumpEvent(stream, event.get());
 
     bool block = false;
     bool success = true;
@@ -66,51 +66,53 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
           event->GetResponse(),
           std::string(),
           content_analysis::sdk::ContentAnalysisResponse::Result::FAILURE);
-      std::cout << "  Verdict: failed to reach verdict: ";
-      std::cout << event->DebugString() << std::endl;
+      stream << "  Verdict: failed to reach verdict: ";
+      stream << event->DebugString() << std::endl;
     } else if (block) {
       auto rc = content_analysis::sdk::SetEventVerdictToBlock(event.get());
-      std::cout << "  Verdict: block";
+      stream << "  Verdict: block";
       if (rc != content_analysis::sdk::ResultCode::OK) {
-        std::cout << " error: "
-                  << content_analysis::sdk::ResultCodeToString(rc) << std::endl;
-        std::cout << "  " << event->DebugString() << std::endl;
+        stream << " error: "
+               << content_analysis::sdk::ResultCodeToString(rc) << std::endl;
+        stream << "  " << event->DebugString() << std::endl;
       }
-      std::cout << std::endl;
+      stream << std::endl;
     } else {
-      std::cout << "  Verdict: allow" << std::endl;
+      stream << "  Verdict: allow" << std::endl;
     }
 
-    std::cout << std::endl;
+    stream << std::endl;
 
     // If a delay is specified, wait that much.
     if (delay_ > 0) {
-      std::cout << "[Demo] delaying request processing for " << delay_ << "s" << std::endl;
+      //stream << "[Demo] delaying request processing for " << delay_ << "s" << std::endl;
       std::this_thread::sleep_for(std::chrono::seconds(delay_));
     }
 
     // Send the response back to Google Chrome.
     auto rc = event->Send();
     if (rc != content_analysis::sdk::ResultCode::OK) {
-      std::cout << "[Demo] Error sending response: "
-                << content_analysis::sdk::ResultCodeToString(rc)
-                << std::endl;
-      std::cout << event->DebugString() << std::endl;
+      stream << "[Demo] Error sending response: "
+             << content_analysis::sdk::ResultCodeToString(rc)
+             << std::endl;
+      stream << event->DebugString() << std::endl;
     }
   }
 
  private:
   void OnBrowserConnected(
       const content_analysis::sdk::BrowserInfo& info) override {
-    std::cout << std::endl << "==========" << std::endl;
-    std::cout << "Browser connected pid=" << info.pid
-              << " path=" << info.binary_path << std::endl;
+    AtomicCout aout;
+    aout.stream() << std::endl << "==========" << std::endl;
+    aout.stream() << "Browser connected pid=" << info.pid
+                  << " path=" << info.binary_path << std::endl;
   }
 
   void OnBrowserDisconnected(
       const content_analysis::sdk::BrowserInfo& info) override {
-    std::cout << std::endl << "Browser disconnected pid=" << info.pid << std::endl;
-    std::cout << "==========" << std::endl;
+    AtomicCout aout;
+    aout.stream() << std::endl << "Browser disconnected pid=" << info.pid << std::endl;
+    aout.stream() << "==========" << std::endl;
   }
 
   void OnAnalysisRequested(std::unique_ptr<Event> event) override {
@@ -120,8 +122,11 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
     // be accessed by more than one thread concurrently.
     //
     // In this example code, the event is handled synchronously.
-    AnalyzeContent(std::move(event));
+    AtomicCout aout;
+    aout.stream() << std::endl << "----------" << std::endl << std::endl;
+    AnalyzeContent(aout.stream(), std::move(event));
   }
+
   void OnResponseAcknowledged(
       const content_analysis::sdk::ContentAnalysisAcknowledgement&
           ack) override {
@@ -146,28 +151,31 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
       }
     }
 
-    std::cout << "Ack: " << ack.request_token() << std::endl;
-    std::cout << "  Final action: " << final_action << std::endl;
+    AtomicCout aout;
+    aout.stream() << "Ack: " << ack.request_token() << std::endl;
+    aout.stream() << "  Final action: " << final_action << std::endl;
   }
   void OnCancelRequests(
       const content_analysis::sdk::ContentAnalysisCancelRequests& cancel)
       override {
-    std::cout << "Cancel: " << std::endl;
-    std::cout << "  User action ID: " << cancel.user_action_id() << std::endl;
+    AtomicCout aout;
+    aout.stream() << "Cancel: " << std::endl;
+    aout.stream() << "  User action ID: " << cancel.user_action_id() << std::endl;
   }
 
   void OnInternalError(
       const char* context,
       content_analysis::sdk::ResultCode error) override {
-    std::cout << std::endl
-              << "*ERROR*: context=\"" << context << "\" "
-              << content_analysis::sdk::ResultCodeToString(error)
-              << std::endl;
+    AtomicCout aout;
+    aout.stream() << std::endl
+                  << "*ERROR*: context=\"" << context << "\" "
+                  << content_analysis::sdk::ResultCodeToString(error)
+                  << std::endl;
   }
 
-  void DumpEvent(Event* event) {
+  void DumpEvent(std::stringstream& stream, Event* event) {
     time_t now = time(nullptr);
-    std::cout << "Received at: " << ctime(&now);  // Returned string includes \n.
+    stream << "Received at: " << ctime(&now);  // Returned string includes \n.
 
     const content_analysis::sdk::ContentAnalysisRequest& request =
         event->GetRequest();
@@ -234,20 +242,20 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
     std::string user_action_id = request.has_user_action_id()
         ? request.user_action_id() : "<No user action id>";
 
-    std::cout << "Request: " << request.request_token() << std::endl;
-    std::cout << "  User action ID: " << user_action_id << std::endl;
-    std::cout << "  Expires at: " << expires_at_str << " ("
-              << secs_remaining << " seconds from now)" << std::endl;
-    std::cout << "  Connector: " << connector << std::endl;
-    std::cout << "  URL: " << url << std::endl;
-    std::cout << "  Tab title: " << tab_title << std::endl;
-    std::cout << "  Filename: " << filename << std::endl;
-    std::cout << "  Digest: " << digest << std::endl;
-    std::cout << "  Filepath: " << file_path << std::endl;
-    std::cout << "  Machine user: " << machine_user << std::endl;
-    std::cout << "  Email: " << email << std::endl;
+    stream << "Request: " << request.request_token() << std::endl;
+    stream << "  User action ID: " << user_action_id << std::endl;
+    stream << "  Expires at: " << expires_at_str << " ("
+           << secs_remaining << " seconds from now)" << std::endl;
+    stream << "  Connector: " << connector << std::endl;
+    stream << "  URL: " << url << std::endl;
+    stream << "  Tab title: " << tab_title << std::endl;
+    stream << "  Filename: " << filename << std::endl;
+    stream << "  Digest: " << digest << std::endl;
+    stream << "  Filepath: " << file_path << std::endl;
+    stream << "  Machine user: " << machine_user << std::endl;
+    stream << "  Email: " << email << std::endl;
     if (request.has_print_data() && !print_data_file_path_.empty()) {
-      std::cout << "  Print data saved to: " << print_data_file_path_
+      stream << "  Print data saved to: " << print_data_file_path_
                 << std::endl;
       using content_analysis::sdk::ContentAnalysisEvent;
       auto print_data =
@@ -298,9 +306,9 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
 // any requests that have the keyword "block" in their data
 class QueuingHandler : public Handler {
  public:
-  QueuingHandler(unsigned long delay, const std::string& print_data_file_path)
+  QueuingHandler(unsigned long threads, unsigned long delay, const std::string& print_data_file_path)
       : Handler(delay, print_data_file_path)  {
-    StartBackgroundThread();
+    StartBackgroundThreads(threads);
   }
 
   ~QueuingHandler() override {
@@ -311,6 +319,15 @@ class QueuingHandler : public Handler {
 
  private:
   void OnAnalysisRequested(std::unique_ptr<Event> event) override {
+    {
+      time_t now = time(nullptr);
+      const content_analysis::sdk::ContentAnalysisRequest& request =
+        event->GetRequest();
+      AtomicCout aout;
+      aout.stream() << std::endl << "Queuing request: " << request.request_token()
+                    << " at " << ctime(&now) << std::endl;
+    }
+
     request_queue_.push(std::move(event));
   }
 
@@ -322,7 +339,18 @@ class QueuingHandler : public Handler {
       if (!event)
         break;
 
-      handler->AnalyzeContent(std::move(event));
+      time_t now = time(nullptr);
+      const content_analysis::sdk::ContentAnalysisRequest& request =
+          event->GetRequest();
+
+      AtomicCout aout;
+      aout.stream()  << std::endl << "----------" << std::endl;
+      aout.stream() << "Thread: " << std::this_thread::get_id() << std::endl;
+      aout.stream() << "Starting request: " << request.request_token()
+                    << " at " << ctime(&now) << std::endl;
+      aout.flush();
+
+      handler->AnalyzeContent(aout.stream(), std::move(event));
     }
 
     return 0;
@@ -331,16 +359,21 @@ class QueuingHandler : public Handler {
   // A list of outstanding content analysis requests.
   RequestQueue request_queue_;
 
-  void StartBackgroundThread() {
-    thread_ = std::make_unique<std::thread>(ProcessRequests, this);
+  void StartBackgroundThreads(unsigned long threads) {
+    threads_.reserve(threads);
+    for (unsigned long i = 0; i < threads; ++i) {
+      threads_.emplace_back(std::make_unique<std::thread>(ProcessRequests, this));
+    }
   }
 
   void WaitForBackgroundThread() {
-    thread_->join();
+    for (auto& thread : threads_) {
+      thread->join();
+    }
   }
 
   // Thread id of backgrond thread.
-  std::unique_ptr<std::thread> thread_;
+  std::vector<std::unique_ptr<std::thread>> threads_;
 };
 
 #endif  // CONTENT_ANALYSIS_DEMO_HANDLER_H_
