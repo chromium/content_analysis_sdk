@@ -8,6 +8,8 @@
 
 #include "event_win.h"
 
+#include "common/utils_win.h"
+
 #include "agent_utils_win.h"
 #include "scoped_print_handle_win.h"
 
@@ -22,20 +24,15 @@ static DWORD WriteMessageToPipe(HANDLE pipe, const std::string& message) {
     return ERROR_SUCCESS;
   }
 
-  OVERLAPPED overlapped;
-  memset(&overlapped, 0, sizeof(overlapped));
-  overlapped.hEvent = CreateEvent(/*securityAttr=*/nullptr,
-                                  /*manualReset=*/TRUE,
-                                  /*initialState=*/FALSE,
-                                  /*name=*/nullptr);
-  if (overlapped.hEvent == nullptr) {
+  internal::ScopedOverlapped overlapped;
+  if (!overlapped.is_valid()) {
     return GetLastError();
   }
 
   DWORD err = ERROR_SUCCESS;
   const char* cursor = message.data();
   for (DWORD size = message.length(); size > 0;) {
-    if (WriteFile(pipe, cursor, size, /*written=*/nullptr, &overlapped)) {
+    if (WriteFile(pipe, cursor, size, /*written=*/nullptr, overlapped)) {
       err = ERROR_SUCCESS;
       break;
     }
@@ -47,7 +44,7 @@ static DWORD WriteMessageToPipe(HANDLE pipe, const std::string& message) {
     }
 
     DWORD written;
-    if (!GetOverlappedResult(pipe, &overlapped, &written, /*wait=*/TRUE)) {
+    if (!GetOverlappedResult(pipe, overlapped, &written, /*wait=*/TRUE)) {
       err = GetLastError();
       break;
     }
@@ -56,7 +53,6 @@ static DWORD WriteMessageToPipe(HANDLE pipe, const std::string& message) {
     size -= written;
   }
 
-  CloseHandle(overlapped.hEvent);
   return err;
 }
 

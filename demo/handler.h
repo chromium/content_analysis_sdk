@@ -340,17 +340,11 @@ class QueuingHandler : public Handler {
       if (!event)
         break;
 
-      time_t now = time(nullptr);
-      const content_analysis::sdk::ContentAnalysisRequest& request =
-          event->GetRequest();
-
       AtomicCout aout;
       aout.stream()  << std::endl << "----------" << std::endl;
       aout.stream() << "Thread: " << std::this_thread::get_id() << std::endl;
-      aout.stream() << "Starting request: " << request.request_token()
-                    << " at " << ctime(&now);
       aout.stream() << "Delaying request processing for "
-                    << handler->delay() << "s" << std::endl;
+                    << handler->delay() << "s" << std::endl << std::endl;
       aout.flush();
 
       handler->AnalyzeContent(aout.stream(), std::move(event));
