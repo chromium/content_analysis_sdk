@@ -28,6 +28,8 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
       delay_(delay), print_data_file_path_(print_data_file_path) {
   }
 
+  unsigned long delay() { return delay_; }
+
  protected:
   // Analyzes one request from Google Chrome and responds back to the browser
   // with either an allow or block verdict.
@@ -85,7 +87,6 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
 
     // If a delay is specified, wait that much.
     if (delay_ > 0) {
-      //stream << "[Demo] delaying request processing for " << delay_ << "s" << std::endl;
       std::this_thread::sleep_for(std::chrono::seconds(delay_));
     }
 
@@ -347,7 +348,9 @@ class QueuingHandler : public Handler {
       aout.stream()  << std::endl << "----------" << std::endl;
       aout.stream() << "Thread: " << std::this_thread::get_id() << std::endl;
       aout.stream() << "Starting request: " << request.request_token()
-                    << " at " << ctime(&now) << std::endl;
+                    << " at " << ctime(&now);
+      aout.stream() << "Delaying request processing for "
+                    << handler->delay() << "s" << std::endl;
       aout.flush();
 
       handler->AnalyzeContent(aout.stream(), std::move(event));

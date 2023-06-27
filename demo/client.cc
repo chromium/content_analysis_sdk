@@ -280,7 +280,7 @@ ContentAnalysisAcknowledgement BuildAcknowledgement(
   return ack;
 }
 
-int HandleRequest(const ContentAnalysisRequest& request) {
+void HandleRequest(const ContentAnalysisRequest& request) {
   AtomicCout aout;
   ContentAnalysisResponse response;
   int err = client->Send(request, &response);
@@ -324,8 +324,6 @@ int HandleRequest(const ContentAnalysisRequest& request) {
       }
     }
   }
-
-  return err;
 }
 
 void ProcessRequest(size_t i) {
