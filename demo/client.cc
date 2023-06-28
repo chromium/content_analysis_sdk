@@ -5,11 +5,15 @@
 #include <time.h>
 
 #include <iostream>
+#include <memory>
+#include <mutex>
 #include <sstream>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "content_analysis/sdk/analysis_client.h"
+#include "demo/atomic_output.h"
 
 using content_analysis::sdk::Client;
 using content_analysis::sdk::ContentAnalysisRequest;
@@ -26,10 +30,7 @@ constexpr char kPathSystem[] = "brcm_chrm_cas";
 std::string path = kPathSystem;
 bool user_specific = false;
 bool group = false;
-
-// When grouping, remember the tokens of all requests/responses in order to
-// acknowledge them all with the same final action.
-std::vector<std::string> request_tokens;
+std::unique_ptr<Client> client;
 
 // Paramters used to build the request.
 content_analysis::sdk::AnalysisConnector connector =
@@ -37,11 +38,22 @@ content_analysis::sdk::AnalysisConnector connector =
 time_t request_token_number = time(nullptr);
 std::string request_token;
 std::string tag = "dlp";
+bool threaded = false;
 std::string digest = "sha256-123456";
 std::string url = "https://upload.example.com";
 std::string email = "me@example.com";
 std::string machine_user = "DOMAIN\\me";
 std::vector<std::string> datas;
+
+// When grouping, remember the tokens of all requests/responses in order to
+// acknowledge them all with the same final action.
+//
+// This global state.  It may be access from multiple thread so must be
+// accessed from a critical section.
+std::mutex global_mutex;
+ContentAnalysisAcknowledgement::FinalAction global_final_action =
+    ContentAnalysisAcknowledgement::ALLOW;
+std::vector<std::string> request_tokens;
 
 // Command line parameters.
 constexpr const char* kArgConnector = "--connector=";
@@ -52,6 +64,7 @@ constexpr const char* kArgMachineUser = "--machine-user=";
 constexpr const char* kArgPath = "--path=";
 constexpr const char* kArgRequestToken = "--request-token=";
 constexpr const char* kArgTag = "--tag=";
+constexpr const char* kArgThreaded = "--threaded";
 constexpr const char* kArgUrl = "--url=";
 constexpr const char* kArgUserSpecific = "--user";
 constexpr const char* kArgHelp = "--help";
@@ -79,6 +92,8 @@ bool ParseCommandLine(int argc, char* argv[]) {
       request_token = arg.substr(strlen(kArgRequestToken));
     } else if (arg.find(kArgTag) == 0) {
       tag = arg.substr(strlen(kArgTag));
+    } else if (arg.find(kArgThreaded) == 0) {
+      threaded = true;
     } else if (arg.find(kArgDigest) == 0) {
       digest = arg.substr(strlen(kArgDigest));
     } else if (arg.find(kArgUrl) == 0) {
@@ -121,6 +136,7 @@ void PrintHelp() {
     << kArgConnector << "<connector> : one of 'download', 'attach' (default), 'bulk-data-entry', 'print', or 'file-transfer'" << std::endl
     << kArgRequestToken << "<unique-token> : defaults to 'req-<number>' which auto increments" << std::endl
     << kArgTag << "<tag> : defaults to 'dlp'" << std::endl
+    << kArgThreaded << " : handled multiple requests using threads" << std::endl
     << kArgUrl << "<url> : defaults to 'https://upload.example.com'" << std::endl
     << kArgMachineUser << "<machine-user> : defaults to 'DOMAIN\\me'" << std::endl
     << kArgEmail << "<email> : defaults to 'me@example.com'" << std::endl
@@ -173,7 +189,7 @@ ContentAnalysisRequest BuildRequest(const std::string& data) {
   } else {
     std::cout << "[Demo] Specify text content or a file path." << std::endl;
     PrintHelp();
-    return ContentAnalysisRequest();
+    exit(1);
   }
 
   return request;
@@ -204,7 +220,9 @@ GetActionFromResponse(const ContentAnalysisResponse& response) {
   return action;
 }
 
-void DumpResponse(int position, const ContentAnalysisResponse& response) {
+void DumpResponse(
+    std::stringstream& stream,
+    const ContentAnalysisResponse& response) {
   for (auto result : response.results()) {
     auto tag = result.has_tag() ? result.tag() : "<no-tag>";
 
@@ -244,9 +262,11 @@ void DumpResponse(int position, const ContentAnalysisResponse& response) {
       break;
     }
 
-    std::cout << "[Demo] Request " << position << " is " << action_str
-      << " after " << tag
-      << " analysis, status=" << status_str << std::endl;
+    time_t now = time(nullptr);
+    stream << "[Demo] Request " << response.request_token()  << " is " << action_str
+           << " after " << tag
+           << " analysis, status=" << status_str
+           << " at " << ctime(&now);
   }
 }
 
@@ -260,53 +280,61 @@ ContentAnalysisAcknowledgement BuildAcknowledgement(
   return ack;
 }
 
-int HandleRequest(Client* client,
-                  int position,
-                  const ContentAnalysisRequest& request,
-                  ContentAnalysisAcknowledgement::FinalAction* final_action) {
+void HandleRequest(const ContentAnalysisRequest& request) {
+  AtomicCout aout;
   ContentAnalysisResponse response;
   int err = client->Send(request, &response);
   if (err != 0) {
-    std::cout << "[Demo] Error sending request " << position << std::endl;
-    return 1;
+    aout.stream() << "[Demo] Error sending request " << request.request_token()
+           << std::endl;
   } else if (response.results_size() == 0) {
-    std::cout << "[Demo] Response " << position << " is missing a result"
-              << std::endl;
-    return 1;
+    aout.stream() << "[Demo] Response " << request.request_token() << " is missing a result"
+                  << std::endl;
   } else {
-    DumpResponse(position, response);
+    DumpResponse(aout.stream(), response);
 
-    *final_action = ContentAnalysisAcknowledgement::ALLOW;
+    auto final_action = ContentAnalysisAcknowledgement::ALLOW;
     switch (GetActionFromResponse(response)) {
     case ContentAnalysisResponse::Result::TriggeredRule::ACTION_UNSPECIFIED:
       break;
     case ContentAnalysisResponse::Result::TriggeredRule::REPORT_ONLY:
-      *final_action = ContentAnalysisAcknowledgement::REPORT_ONLY;
+      final_action = ContentAnalysisAcknowledgement::REPORT_ONLY;
       break;
     case ContentAnalysisResponse::Result::TriggeredRule::WARN:
-      *final_action = ContentAnalysisAcknowledgement::WARN;
+      final_action = ContentAnalysisAcknowledgement::WARN;
       break;
     case ContentAnalysisResponse::Result::TriggeredRule::BLOCK:
-      *final_action = ContentAnalysisAcknowledgement::BLOCK;
+      final_action = ContentAnalysisAcknowledgement::BLOCK;
       break;
     }
 
     // If grouping, remember the request's token in order to ack the response
     // later.
     if (group) {
+      std::unique_lock<std::mutex> lock(global_mutex);
       request_tokens.push_back(request.request_token());
+      if (final_action > global_final_action)
+        global_final_action = final_action;
     } else {
       int err = client->Acknowledge(
-        BuildAcknowledgement(request.request_token(), *final_action));
+        BuildAcknowledgement(request.request_token(), final_action));
       if (err != 0) {
-        std::cout << "[Demo] Error sending ack " << position << std::endl;
+        aout.stream() << "[Demo] Error sending ack " << request.request_token()
+                      << std::endl;
       }
     }
+  }
+}
 
-    return 1;
+void ProcessRequest(size_t i) {
+  auto request = BuildRequest(datas[i]);
+
+  {
+    AtomicCout aout;
+    aout.stream() << "[Demo] Sending request " << request.request_token() << std::endl;
   }
 
-  return 0;
+  HandleRequest(request);
 }
 
 int main(int argc, char* argv[]) {
@@ -316,7 +344,7 @@ int main(int argc, char* argv[]) {
   }
 
   // Each client uses a unique name to identify itself with Google Chrome.
-  auto client = Client::Create({path, user_specific});
+  client = Client::Create({path, user_specific});
   if (!client) {
     std::cout << "[Demo] Error starting client" << std::endl;
     return 1;
@@ -326,19 +354,31 @@ int main(int argc, char* argv[]) {
   std::cout << "Agent pid=" << info.pid
             << " path=" << info.binary_path << std::endl;
 
-  ContentAnalysisAcknowledgement::FinalAction final_action =
-      ContentAnalysisAcknowledgement::ALLOW;
-  for (int i = 0; i < datas.size(); ++i) {
-    ContentAnalysisAcknowledgement::FinalAction final_action2;
-    HandleRequest(client.get(), i + 1, BuildRequest(datas[i]), &final_action2);
-    if (final_action2 > final_action)
-      final_action = final_action2;
+  if (threaded) {
+    std::vector<std::unique_ptr<std::thread>> threads;
+    for (int i = 0; i < datas.size(); ++i) {
+      AtomicCout aout;
+      aout.stream() << "Start thread " << i << std::endl;
+      threads.emplace_back(std::make_unique<std::thread>(ProcessRequest, i));
+    }
+
+    // Make sure all threads have terminated.
+    for (auto& thread : threads) {
+      thread->join();
+    }
   }
+  else {
+    for (size_t i = 0; i < datas.size(); ++i) {
+      ProcessRequest(i);
+    }
+  }
+  // It's safe to access global state beyond this point without locking since
+  // all no more responses will be touching them.
 
   if (group) {
     std::cout << std::endl;
     std::cout << "[Demo] Final action for all requests is ";
-    switch (final_action) {
+    switch (global_final_action) {
     // Google Chrome fails open, so if no action is specified that is the same
     // as ALLOW.
     case ContentAnalysisAcknowledgement::ACTION_UNSPECIFIED:
@@ -358,8 +398,9 @@ int main(int argc, char* argv[]) {
     std::cout << std::endl << std::endl;
 
     for (auto token : request_tokens) {
+      std::cout << "[Demo] Sending group Ack" << std::endl;
       int err = client->Acknowledge(
-        BuildAcknowledgement(token, final_action));
+        BuildAcknowledgement(token, global_final_action));
       if (err != 0) {
         std::cout << "[Demo] Error sending ack for " << token << std::endl;
       }
