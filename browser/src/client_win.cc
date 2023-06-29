@@ -159,10 +159,22 @@ std::vector<char> ReadNextMessageFromPipe(
   int final_size = 0;
   while (true) {
     DWORD read;
+
+    // Even though the pipe is opened for overlapped IO, the read operation
+    // could still completely synchrnously.  For example, a server's response
+    // message could already be available in the pipe's internal buffer.
+    // If ReadFile() does complete synchrnously, TRUE is returned.  In this
+    // case update the final size and exit the loop.
     if (ReadFile(pipe, p, kBufferSize, &read, overlapped)) {
       final_size += read;
       break;
     } else {
+      // Reaching here means that ReadFile() will either complete async or
+      // an error has occurred.  The former case is detected if the error code
+      // is "IO pending", in which case GetOverlappedResult() is called to wait
+      // for the IO to complete.  If that function returns TRUE then the read
+      // operation completed successfully and the code simply updates the final
+      // size and exits the loop.
       err = GetLastError();
       if (err == ERROR_IO_PENDING) {
         if (GetOverlappedResult(pipe, overlapped, &read, /*wait=*/TRUE)) {
@@ -173,10 +185,22 @@ std::vector<char> ReadNextMessageFromPipe(
         }
       }
 
+      // Reaching here means an error has occurred.  One error is recoverable:
+      // "more data".  For any other type of error break out of the loop.
       if (err != ERROR_MORE_DATA) {
         break;
       }
 
+      // Reaching here means the error is "more data", that is, the buffer
+      // specified in ReadFile() was too small to contain the entire response
+      // message from the server. ReadFile() has placed the start of the
+      // message in the specified buffer but ReadFile() needs to be called
+      // again to read the remaining part.
+      //
+      // The buffer size is increased and the current pointer into the buffer
+      // `p` is adjusted so that when the loop re-runs, it calls ReadFile()
+      // with the correct point in the buffer.  It's possible that this loop
+      // might have to run many times if the response message is rather large.
       buffer.resize(buffer.size() + kBufferSize);
       p = buffer.data() + buffer.size() - kBufferSize;
     }
@@ -195,8 +219,16 @@ bool WriteMessageToPipe(
   if (message.empty())
     return false;
 
+  // Even though the pipe is opened for overlapped IO, the write operation
+  // could still completely synchrnously.  If it does, TRUE is returned.
+  // In this case the function is done.
   bool ok = WriteFile(pipe, message.data(), message.size(), nullptr, overlapped);
   if (!ok) {
+    // Reaching here means that WriteFile() will either complete async or
+    // an error has occurred.  The former case is detected if the error code
+    // is "IO pending", in which case GetOverlappedResult() is called to wait
+    // for the IO to complete.  Whether the operation completes sync or async,
+    // return true if the operation succeeded and false otherwise.
     DWORD err = GetLastError();
     if (err == ERROR_IO_PENDING) {
       DWORD written;
@@ -340,7 +372,7 @@ DWORD ClientWin::ConnectToPipe(const std::string& pipename, HANDLE* handle) {
   // Open the named pipe for overlapped IO, i.e. do not specify either of the
   // FILE_SYNCHRONOUS_IO_xxxALERT in the creation option flags.  If the pipe
   // is not opened for overlapped IO, then the Send() method will block if
-  // called form different threads since only one read or write operation would
+  // called from different threads since only one read or write operation would
   // be allowed at a time.
   IO_STATUS_BLOCK io;
   HANDLE h = INVALID_HANDLE_VALUE;
