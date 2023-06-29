@@ -161,9 +161,9 @@ std::vector<char> ReadNextMessageFromPipe(
     DWORD read;
 
     // Even though the pipe is opened for overlapped IO, the read operation
-    // could still completely synchrnously.  For example, a server's response
+    // could still completely synchronously.  For example, a server's response
     // message could already be available in the pipe's internal buffer.
-    // If ReadFile() does complete synchrnously, TRUE is returned.  In this
+    // If ReadFile() does complete synchronously, TRUE is returned.  In this
     // case update the final size and exit the loop.
     if (ReadFile(pipe, p, kBufferSize, &read, overlapped)) {
       final_size += read;
@@ -220,7 +220,7 @@ bool WriteMessageToPipe(
     return false;
 
   // Even though the pipe is opened for overlapped IO, the write operation
-  // could still completely synchrnously.  If it does, TRUE is returned.
+  // could still completely synchronously.  If it does, TRUE is returned.
   // In this case the function is done.
   bool ok = WriteFile(pipe, message.data(), message.size(), nullptr, overlapped);
   if (!ok) {
