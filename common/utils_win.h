@@ -55,6 +55,20 @@ DWORD CreatePipe(const std::string& name,
 // process ID.
 bool GetProcessPath(unsigned long pid, std::string* binary_path);
 
+// A class that scopes the creation and destruction of an OVERLAPPED structure
+// used for async IO.
+class ScopedOverlapped {
+ public:
+  ScopedOverlapped();
+  ~ScopedOverlapped();
+
+  bool is_valid() { return overlapped_.hEvent != nullptr; }
+  operator OVERLAPPED*() { return &overlapped_; }
+
+ private:
+  OVERLAPPED overlapped_;
+};
+
 }  // internal
 }  // namespace sdk
 }  // namespace content_analysis

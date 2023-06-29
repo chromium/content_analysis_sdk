@@ -148,6 +148,97 @@ NTSTATUS WaitForPipeAvailability(const UNICODE_STRING& path) {
   return sts;
 }
 
+// Reads the next message from the pipe and returns a buffer of chars.
+// This function is synchronous.
+std::vector<char> ReadNextMessageFromPipe(
+    HANDLE pipe,
+    OVERLAPPED* overlapped) {
+  DWORD err = ERROR_SUCCESS;
+  std::vector<char> buffer(kBufferSize);
+  char* p = buffer.data();
+  int final_size = 0;
+  while (true) {
+    DWORD read;
+
+    // Even though the pipe is opened for overlapped IO, the read operation
+    // could still completely synchronously.  For example, a server's response
+    // message could already be available in the pipe's internal buffer.
+    // If ReadFile() does complete synchronously, TRUE is returned.  In this
+    // case update the final size and exit the loop.
+    if (ReadFile(pipe, p, kBufferSize, &read, overlapped)) {
+      final_size += read;
+      break;
+    } else {
+      // Reaching here means that ReadFile() will either complete async or
+      // an error has occurred.  The former case is detected if the error code
+      // is "IO pending", in which case GetOverlappedResult() is called to wait
+      // for the IO to complete.  If that function returns TRUE then the read
+      // operation completed successfully and the code simply updates the final
+      // size and exits the loop.
+      err = GetLastError();
+      if (err == ERROR_IO_PENDING) {
+        if (GetOverlappedResult(pipe, overlapped, &read, /*wait=*/TRUE)) {
+          final_size += read;
+          break;
+        } else {
+          err = GetLastError();
+        }
+      }
+
+      // Reaching here means an error has occurred.  One error is recoverable:
+      // "more data".  For any other type of error break out of the loop.
+      if (err != ERROR_MORE_DATA) {
+        break;
+      }
+
+      // Reaching here means the error is "more data", that is, the buffer
+      // specified in ReadFile() was too small to contain the entire response
+      // message from the server. ReadFile() has placed the start of the
+      // message in the specified buffer but ReadFile() needs to be called
+      // again to read the remaining part.
+      //
+      // The buffer size is increased and the current pointer into the buffer
+      // `p` is adjusted so that when the loop re-runs, it calls ReadFile()
+      // with the correct point in the buffer.  It's possible that this loop
+      // might have to run many times if the response message is rather large.
+      buffer.resize(buffer.size() + kBufferSize);
+      p = buffer.data() + buffer.size() - kBufferSize;
+    }
+  }
+
+  buffer.resize(final_size);
+  return buffer;
+}
+
+// Writes a string to the pipe. Returns true if successful, false otherwise.
+// This function is synchronous.
+bool WriteMessageToPipe(
+    HANDLE pipe,
+    const std::string& message,
+    OVERLAPPED* overlapped) {
+  if (message.empty())
+    return false;
+
+  // Even though the pipe is opened for overlapped IO, the write operation
+  // could still completely synchronously.  If it does, TRUE is returned.
+  // In this case the function is done.
+  bool ok = WriteFile(pipe, message.data(), message.size(), nullptr, overlapped);
+  if (!ok) {
+    // Reaching here means that WriteFile() will either complete async or
+    // an error has occurred.  The former case is detected if the error code
+    // is "IO pending", in which case GetOverlappedResult() is called to wait
+    // for the IO to complete.  Whether the operation completes sync or async,
+    // return true if the operation succeeded and false otherwise.
+    DWORD err = GetLastError();
+    if (err == ERROR_IO_PENDING) {
+      DWORD written;
+      ok = GetOverlappedResult(pipe, overlapped, &written, /*wait=*/TRUE);
+    }
+  }
+
+  return ok;
+}
+
 }  // namespace
 
 // static
@@ -191,10 +282,17 @@ int ClientWin::Send(ContentAnalysisRequest request,
                     ContentAnalysisResponse* response) {
   ChromeToAgent chrome_to_agent;
   *chrome_to_agent.mutable_request() = std::move(request);
+
+  internal::ScopedOverlapped overlapped;
+  if (!overlapped.is_valid()) {
+    return -1;
+  }
+
   bool success = WriteMessageToPipe(hPipe_,
-                                    chrome_to_agent.SerializeAsString());
+                                    chrome_to_agent.SerializeAsString(),
+                                    overlapped);
   if (success) {
-    std::vector<char> buffer = ReadNextMessageFromPipe(hPipe_);
+    std::vector<char> buffer = ReadNextMessageFromPipe(hPipe_, overlapped);
     AgentToChrome agent_to_chrome;
     success = agent_to_chrome.ParseFromArray(buffer.data(), buffer.size());
     if (success) {
@@ -211,7 +309,13 @@ int ClientWin::Acknowledge(const ContentAnalysisAcknowledgement& ack) {
   // at call site.
   ChromeToAgent chrome_to_agent;
   *chrome_to_agent.mutable_ack() = ack;
-  return WriteMessageToPipe(hPipe_, chrome_to_agent.SerializeAsString())
+
+  internal::ScopedOverlapped overlapped;
+  if (!overlapped.is_valid()) {
+    return -1;
+  }
+
+  return WriteMessageToPipe(hPipe_, chrome_to_agent.SerializeAsString(), overlapped)
       ? 0 : -1;
 }
 
@@ -221,7 +325,13 @@ int ClientWin::CancelRequests(const ContentAnalysisCancelRequests& cancel) {
   // at call site.
   ChromeToAgent chrome_to_agent;
   *chrome_to_agent.mutable_cancel() = cancel;
-  return WriteMessageToPipe(hPipe_, chrome_to_agent.SerializeAsString())
+
+  internal::ScopedOverlapped overlapped;
+  if (!overlapped.is_valid()) {
+    return -1;
+  }
+
+  return WriteMessageToPipe(hPipe_, chrome_to_agent.SerializeAsString(), overlapped)
       ? 0 : -1;
 }
 
@@ -259,17 +369,22 @@ DWORD ClientWin::ConnectToPipe(const std::string& pipename, HANDLE* handle) {
   InitializeObjectAttributes(&attr, &name, OBJ_CASE_INSENSITIVE, nullptr,
                              nullptr);
 
+  // Open the named pipe for overlapped IO, i.e. do not specify either of the
+  // FILE_SYNCHRONOUS_IO_xxxALERT in the creation option flags.  If the pipe
+  // is not opened for overlapped IO, then the Send() method will block if
+  // called from different threads since only one read or write operation would
+  // be allowed at a time.
   IO_STATUS_BLOCK io;
   HANDLE h = INVALID_HANDLE_VALUE;
-  while (h == INVALID_HANDLE_VALUE) {
-    NTSTATUS sts = fnNtCreateFile(&h, GENERIC_READ | GENERIC_WRITE |
+  NTSTATUS sts = STATUS_IO_TIMEOUT;
+  while (sts == STATUS_IO_TIMEOUT) {
+    sts = fnNtCreateFile(&h, GENERIC_READ | GENERIC_WRITE |
         SYNCHRONIZE, &attr, &io, /*AllocationSize=*/nullptr,
         FILE_ATTRIBUTE_NORMAL, /*ShareAccess=*/0, FILE_OPEN,
-        FILE_NON_DIRECTORY_FILE | FILE_SYNCHRONOUS_IO_NONALERT,
+        FILE_NON_DIRECTORY_FILE,
         /*EaBuffer=*/nullptr, /*EaLength=*/0);
     if (sts != STATUS_SUCCESS) {
       if (sts != STATUS_PIPE_NOT_AVAILABLE) {
-        SetLastError(sts);
         break;
       }
 
@@ -280,8 +395,8 @@ DWORD ClientWin::ConnectToPipe(const std::string& pipename, HANDLE* handle) {
     }
   }
 
-  if (h == INVALID_HANDLE_VALUE) {
-    return GetLastError();
+  if (sts != STATUS_SUCCESS) {
+    return ERROR_PIPE_NOT_CONNECTED;
   }
 
   // Change to message read mode to match server side.  Max connection count
@@ -297,38 +412,6 @@ DWORD ClientWin::ConnectToPipe(const std::string& pipename, HANDLE* handle) {
 
   *handle = h;
   return ERROR_SUCCESS;
-}
-
-// static
-std::vector<char> ClientWin::ReadNextMessageFromPipe(HANDLE pipe) {
-  DWORD err = ERROR_SUCCESS;
-  std::vector<char> buffer(kBufferSize);
-  char* p = buffer.data();
-  int final_size = 0;
-  while (true) {
-    DWORD read;
-    if (ReadFile(pipe, p, kBufferSize, &read, nullptr)) {
-      final_size += read;
-      break;
-    } else {
-      err = GetLastError();
-      if (err != ERROR_MORE_DATA)
-        break;
-
-      buffer.resize(buffer.size() + kBufferSize);
-      p = buffer.data() + buffer.size() - kBufferSize;
-    }
-  }
-  buffer.resize(final_size);
-  return buffer;
-}
-
-// static
-bool ClientWin::WriteMessageToPipe(HANDLE pipe, const std::string& message) {
-  if (message.empty())
-    return false;
-  DWORD written;
-  return WriteFile(pipe, message.data(), message.size(), &written, nullptr);
 }
 
 void ClientWin::Shutdown() {

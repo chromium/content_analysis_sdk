@@ -155,6 +155,20 @@ bool GetProcessPath(unsigned long pid, std::string* binary_path) {
   return true;
 }
 
+ScopedOverlapped::ScopedOverlapped() {
+  memset(&overlapped_, 0, sizeof(overlapped_));
+  overlapped_.hEvent = CreateEvent(/*securityAttr=*/nullptr,
+                                   /*manualReset=*/TRUE,
+                                   /*initialState=*/FALSE,
+                                   /*name=*/nullptr);
+}
+
+ScopedOverlapped::~ScopedOverlapped() {
+  if (overlapped_.hEvent != nullptr) {
+    CloseHandle(overlapped_.hEvent);
+  }
+}
+
 }  // internal
 }  // namespace sdk
 }  // namespace content_analysis

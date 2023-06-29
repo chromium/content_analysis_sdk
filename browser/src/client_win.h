@@ -27,13 +27,6 @@ class ClientWin : public ClientBase {
  private:
   static DWORD ConnectToPipe(const std::string& pipename, HANDLE* handle);
 
-  // Reads the next message from the pipe and returns a buffer of chars.
-  // Can read any length of message.
-  static std::vector<char> ReadNextMessageFromPipe(HANDLE pipe);
-
-  // Writes a string to the pipe. Returns True if successful, else returns False.
-  static bool WriteMessageToPipe(HANDLE pipe, const std::string& message);
-
   // Performs a clean shutdown of the client.
   void Shutdown();
 
