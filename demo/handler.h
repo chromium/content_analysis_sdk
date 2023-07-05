@@ -207,7 +207,7 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
     std::string url =
         request.has_request_data() && request.request_data().has_url()
         ? request.request_data().url() : "<No URL>";
-    
+
     std::string tab_title =
         request.has_request_data() && request.request_data().has_tab_title()
         ? request.request_data().tab_title() : "<No tab title>";
@@ -256,6 +256,15 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
     stream << "  Machine user: " << machine_user << std::endl;
     stream << "  Email: " << email << std::endl;
     if (request.has_print_data() && !print_data_file_path_.empty()) {
+      if (request.request_data().has_print_metadata() &&
+          request.request_data().print_metadata().has_printer_name()) {
+        stream << "  Printer name: "
+               << request.request_data().print_metadata().printer_name()
+               << std::endl;
+      } else {
+        stream << "  No printer name in request" << std::endl;
+      }
+
       stream << "  Print data saved to: " << print_data_file_path_
                 << std::endl;
       using content_analysis::sdk::ContentAnalysisEvent;
