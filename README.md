@@ -45,7 +45,7 @@ The following must be installed on the computer before building the demo:
 - On linux, the `realpath` shell tool, available in the `coreutils` package.
   In Debian-based distributions use `sudo apt intall coreutils`.
   In Red Hat distributions use `sudo yum install coreutils`.
-- On Mac, use `brew install cmake coreutils pkg-config` or an equivalent setup
+- On Mac, use `brew install cmake coreutils pkg-config googletest` or an equivalent setup
 
 ### Running prepare_build
 
