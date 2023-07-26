@@ -251,8 +251,13 @@ ResultCode AgentWin::Connection::QueueReadFile(bool reset_cursor) {
     // Ignore broken pipes for notifications since that happens when the Google
     // Chrome browser shuts down.  The agent will be notified of a browser
     // disconnect in that case.
+    //
+    // More data means that `buffer_` was too small to read the entire message
+    // from the browser.  The buffer has already been resized.  Another call to
+    // ReadFile() is needed to get the remainder.
     if (rc != ResultCode::ERR_IO_PENDING &&
-        rc != ResultCode::ERR_BROKEN_PIPE) {
+        rc != ResultCode::ERR_BROKEN_PIPE &&
+        rc != ResultCode::ERR_MORE_DATA) {
       NotifyIfError("QueueReadFile", rc, err);
     }
   }
@@ -269,19 +274,21 @@ ResultCode AgentWin::Connection::OnReadFile(BOOL done_reading, DWORD count) {
     return CallHandler();
   }
 
-  // If success os false, there are two possibilities:
+  // Otherwise there are two possibilities:
   //
   // 1/ The last error is ERROR_MORE_DATA(234).  This means there are more
-  //     bytes to read before the request message is complete.  Resize the
-  //     buffer and adjust the cursor.  The caller will queue up another read
-  //     and wait.
-  // 2/ Some error occured.  In this case return the error.
+  //    bytes to read before the request message is complete.  Resize the
+  //    buffer and adjust the cursor.  The caller will queue up another read
+  //    and wait.  don't notify the handler since this is not an error.
+  // 2/ Some error occured.  In this case notify the handler and return the
+  //    error.
 
   DWORD err = GetLastError();
   if (err == ERROR_MORE_DATA) {
     read_size_ = internal::kBufferSize;
     buffer_.resize(buffer_.size() + read_size_);
     cursor_ = buffer_.data() + buffer_.size() - read_size_;
+    return ErrorToResultCode(err);
   }
 
   return NotifyIfError("OnReadFile", ErrorToResultCode(err));
