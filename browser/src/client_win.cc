@@ -188,6 +188,7 @@ std::vector<char> ReadNextMessageFromPipe(
       // Reaching here means an error has occurred.  One error is recoverable:
       // "more data".  For any other type of error break out of the loop.
       if (err != ERROR_MORE_DATA) {
+        final_size = 0;
         break;
       }
 
@@ -294,7 +295,8 @@ int ClientWin::Send(ContentAnalysisRequest request,
   if (success) {
     std::vector<char> buffer = ReadNextMessageFromPipe(hPipe_, overlapped);
     AgentToChrome agent_to_chrome;
-    success = agent_to_chrome.ParseFromArray(buffer.data(), buffer.size());
+    success = buffer.size() > 0 &&
+        agent_to_chrome.ParseFromArray(buffer.data(), buffer.size());
     if (success) {
       *response = std::move(*agent_to_chrome.mutable_response());
     }
