@@ -255,6 +255,25 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
     stream << "  Filepath: " << file_path << std::endl;
     stream << "  Machine user: " << machine_user << std::endl;
     stream << "  Email: " << email << std::endl;
+
+    if (request.has_text_content() && !request.text_content().empty()) {
+      std::string prefix = "  Pasted data: ";
+      std::string text_content = request.text_content();
+
+      // Truncate the text past 50 bytes to keep it to a reasonable length in
+      // the terminal window.
+      if (text_content.size() > 50) {
+        prefix = "  Pasted data (truncated): ";
+        text_content = text_content.substr(0, 50) + "...";
+      }
+      stream << prefix
+             << text_content
+             << std::endl;
+      stream << "  Pasted data size (bytes): "
+             << request.text_content().size()
+             << std::endl;
+    }
+
     if (request.has_print_data() && !print_data_file_path_.empty()) {
       if (request.request_data().has_print_metadata() &&
           request.request_data().print_metadata().has_printer_name()) {
