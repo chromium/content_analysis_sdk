@@ -153,7 +153,7 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
     }
 
     AtomicCout aout;
-    aout.stream() << "Ack: " << ack.request_token() << std::endl;
+    aout.stream() << "  Ack: " << ack.request_token() << std::endl;
     aout.stream() << "  Final action: " << final_action << std::endl;
   }
   void OnCancelRequests(
