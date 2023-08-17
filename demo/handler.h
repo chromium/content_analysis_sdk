@@ -204,23 +204,24 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
     }
     std::string reason;
     if (request.has_reason()) {
+      using content_analysis::sdk::ContentAnalysisRequest;
       switch (request.reason()) {
-        case UNKNOWN:
+        case content_analysis::sdk::ContentAnalysisRequest::UNKNOWN:
           reason = "<Unknown>";
-        case CLIPBOARD_PASTE:
+        case content_analysis::sdk::ContentAnalysisRequest::CLIPBOARD_PASTE:
           reason = "CLIPBOARD_PASTE";
-        case DRAG_AND_DROP:
+        case content_analysis::sdk::ContentAnalysisRequest::DRAG_AND_DROP:
           reason = "DRAG_AND_DROP";
-        case FILE_PICKER_DIALOG:
-          reason = "DRAG_AND_DROP";
-        case PRINT_PREVIEW_PRINT:
-          reason = "DRAG_AND_DROP";
-        case SYSTEM_DIALOG_PRINT:
-          reason = "DRAG_AND_DROP";
-        case NORMAL_DOWNLOAD:
-          reason = "DRAG_AND_DROP";
-        case SAVE_AS_DOWNLOAD:
-          reason = "DRAG_AND_DROP";
+        case content_analysis::sdk::ContentAnalysisRequest::FILE_PICKER_DIALOG:
+          reason = "FILE_PICKER_DIALOG";
+        case content_analysis::sdk::ContentAnalysisRequest::PRINT_PREVIEW_PRINT:
+          reason = "PRINT_PREVIEW_PRINT";
+        case content_analysis::sdk::ContentAnalysisRequest::SYSTEM_DIALOG_PRINT:
+          reason = "SYSTEM_DIALOG_PRINT";
+        case content_analysis::sdk::ContentAnalysisRequest::NORMAL_DOWNLOAD:
+          reason = "NORMAL_DOWNLOAD";
+        case content_analysis::sdk::ContentAnalysisRequest::SAVE_AS_DOWNLOAD:
+          reason = "SAVE_AS_DOWNLOAD";
       }
     }
 
