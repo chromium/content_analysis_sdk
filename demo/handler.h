@@ -208,20 +208,28 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
       switch (request.reason()) {
         case content_analysis::sdk::ContentAnalysisRequest::UNKNOWN:
           reason = "<Unknown>";
+          break;
         case content_analysis::sdk::ContentAnalysisRequest::CLIPBOARD_PASTE:
           reason = "CLIPBOARD_PASTE";
+          break;
         case content_analysis::sdk::ContentAnalysisRequest::DRAG_AND_DROP:
           reason = "DRAG_AND_DROP";
+          break;
         case content_analysis::sdk::ContentAnalysisRequest::FILE_PICKER_DIALOG:
           reason = "FILE_PICKER_DIALOG";
+          break;
         case content_analysis::sdk::ContentAnalysisRequest::PRINT_PREVIEW_PRINT:
           reason = "PRINT_PREVIEW_PRINT";
+          break;
         case content_analysis::sdk::ContentAnalysisRequest::SYSTEM_DIALOG_PRINT:
           reason = "SYSTEM_DIALOG_PRINT";
+          break;
         case content_analysis::sdk::ContentAnalysisRequest::NORMAL_DOWNLOAD:
           reason = "NORMAL_DOWNLOAD";
+          break;
         case content_analysis::sdk::ContentAnalysisRequest::SAVE_AS_DOWNLOAD:
           reason = "SAVE_AS_DOWNLOAD";
+          break;
       }
     }
 
