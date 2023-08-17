@@ -182,25 +182,46 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
         event->GetRequest();
     std::string connector = "<Unknown>";
     if (request.has_analysis_connector()) {
-      switch (request.analysis_connector())
-      {
-      case content_analysis::sdk::FILE_DOWNLOADED:
-        connector = "download";
-        break;
-      case content_analysis::sdk::FILE_ATTACHED:
-        connector = "attach";
-        break;
-      case content_analysis::sdk::BULK_DATA_ENTRY:
-        connector = "bulk-data-entry";
-        break;
-      case content_analysis::sdk::PRINT:
-        connector = "print";
-        break;
-      case content_analysis::sdk::FILE_TRANSFER:
-        connector = "file-transfer";
-        break;
-      default:
-        break;
+      switch (request.analysis_connector()) {
+        case content_analysis::sdk::FILE_DOWNLOADED:
+          connector = "download";
+          break;
+        case content_analysis::sdk::FILE_ATTACHED:
+          connector = "attach";
+          break;
+        case content_analysis::sdk::BULK_DATA_ENTRY:
+          connector = "bulk-data-entry";
+          break;
+        case content_analysis::sdk::PRINT:
+          connector = "print";
+          break;
+        case content_analysis::sdk::FILE_TRANSFER:
+          connector = "file-transfer";
+          break;
+        default:
+          break;
+      }
+    }
+    std::string reason;
+    if (request.has_reason()) {
+      using content_analysis::sdk::ContentAnalysisRequest;
+      switch (request.reason()) {
+        case content_analysis::sdk::ContentAnalysisRequest::UNKNOWN:
+          reason = "<Unknown>";
+        case content_analysis::sdk::ContentAnalysisRequest::CLIPBOARD_PASTE:
+          reason = "CLIPBOARD_PASTE";
+        case content_analysis::sdk::ContentAnalysisRequest::DRAG_AND_DROP:
+          reason = "DRAG_AND_DROP";
+        case content_analysis::sdk::ContentAnalysisRequest::FILE_PICKER_DIALOG:
+          reason = "FILE_PICKER_DIALOG";
+        case content_analysis::sdk::ContentAnalysisRequest::PRINT_PREVIEW_PRINT:
+          reason = "PRINT_PREVIEW_PRINT";
+        case content_analysis::sdk::ContentAnalysisRequest::SYSTEM_DIALOG_PRINT:
+          reason = "SYSTEM_DIALOG_PRINT";
+        case content_analysis::sdk::ContentAnalysisRequest::NORMAL_DOWNLOAD:
+          reason = "NORMAL_DOWNLOAD";
+        case content_analysis::sdk::ContentAnalysisRequest::SAVE_AS_DOWNLOAD:
+          reason = "SAVE_AS_DOWNLOAD";
       }
     }
 
@@ -248,6 +269,9 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
     stream << "  Expires at: " << expires_at_str << " ("
            << secs_remaining << " seconds from now)" << std::endl;
     stream << "  Connector: " << connector << std::endl;
+    if (!reason.empty()) {
+      stream << "  Reason: " << reason << std::endl;
+    }
     stream << "  URL: " << url << std::endl;
     stream << "  Tab title: " << tab_title << std::endl;
     stream << "  Filename: " << filename << std::endl;
