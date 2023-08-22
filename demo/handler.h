@@ -8,6 +8,7 @@
 #include <time.h>
 
 #include <chrono>
+#include <cstdio>
 #include <fstream>
 #include <iostream>
 #include <thread>
@@ -33,21 +34,23 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
  protected:
   // Analyzes one request from Google Chrome and responds back to the browser
   // with either an allow or block verdict.
-  void AnalyzeContent(std::stringstream& stream, std::unique_ptr<Event> event) {
+  void AnalyzeContent(AtomicCout& aout, std::unique_ptr<Event> event) {
     // An event represents one content analysis request and response triggered
     // by a user action in Google Chrome.  The agent determines whether the
     // user is allowed to perform the action by examining event->GetRequest().
     // The verdict, which can be "allow" or "block" is written into
     // event->GetResponse().
 
-    DumpEvent(stream, event.get());
+    DumpEvent(aout.stream(), event.get());
 
     bool block = false;
     bool success = true;
+    unsigned long delay = delay_;
 
     if (event->GetRequest().has_text_content()) {
       block = ShouldBlockRequest(
           event->GetRequest().text_content());
+      GetFileSpecificDelay(event->GetRequest().text_content(), &delay);
     } else if (event->GetRequest().has_file_path()) {
       std::string content;
       success =
@@ -55,12 +58,14 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
                               &content);
       if (success) {
         block = ShouldBlockRequest(content);
+        GetFileSpecificDelay(content, &delay);
       }
     } else if (event->GetRequest().has_print_data()) {
       // In the case of print request, normally the PDF bytes would be parsed
       // for sensitive data violations. To keep this class simple, only the
       // URL is checked for the word "block".
       block = ShouldBlockRequest(event->GetRequest().request_data().url());
+      GetFileSpecificDelay(event->GetRequest().request_data().url(), &delay);
     }
 
     if (!success) {
@@ -68,35 +73,38 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
           event->GetResponse(),
           std::string(),
           content_analysis::sdk::ContentAnalysisResponse::Result::FAILURE);
-      stream << "  Verdict: failed to reach verdict: ";
-      stream << event->DebugString() << std::endl;
+      aout.stream() << "  Verdict: failed to reach verdict: ";
+      aout.stream() << event->DebugString() << std::endl;
     } else if (block) {
       auto rc = content_analysis::sdk::SetEventVerdictToBlock(event.get());
-      stream << "  Verdict: block";
+      aout.stream() << "  Verdict: block";
       if (rc != content_analysis::sdk::ResultCode::OK) {
-        stream << " error: "
-               << content_analysis::sdk::ResultCodeToString(rc) << std::endl;
-        stream << "  " << event->DebugString() << std::endl;
+        aout.stream() << " error: "
+                      << content_analysis::sdk::ResultCodeToString(rc) << std::endl;
+        aout.stream() << "  " << event->DebugString() << std::endl;
       }
-      stream << std::endl;
+      aout.stream() << std::endl;
     } else {
-      stream << "  Verdict: allow" << std::endl;
+      aout.stream() << "  Verdict: allow" << std::endl;
     }
 
-    stream << std::endl;
+    aout.stream() << std::endl;
 
     // If a delay is specified, wait that much.
-    if (delay_ > 0) {
-      std::this_thread::sleep_for(std::chrono::seconds(delay_));
+    if (delay > 0) {
+      aout.stream() << "Delaying response to " << event->GetRequest().request_token()
+                    << " for " << delay << "s" << std::endl<< std::endl;
+      aout.flush();
+      std::this_thread::sleep_for(std::chrono::seconds(delay));
     }
 
     // Send the response back to Google Chrome.
     auto rc = event->Send();
     if (rc != content_analysis::sdk::ResultCode::OK) {
-      stream << "[Demo] Error sending response: "
-             << content_analysis::sdk::ResultCodeToString(rc)
-             << std::endl;
-      stream << event->DebugString() << std::endl;
+      aout.stream() << "[Demo] Error sending response: "
+                    << content_analysis::sdk::ResultCodeToString(rc)
+                    << std::endl;
+      aout.stream() << event->DebugString() << std::endl;
     }
   }
 
@@ -125,7 +133,7 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
     // In this example code, the event is handled synchronously.
     AtomicCout aout;
     aout.stream() << std::endl << "----------" << std::endl << std::endl;
-    AnalyzeContent(aout.stream(), std::move(event));
+    AnalyzeContent(aout, std::move(event));
   }
 
   void OnResponseAcknowledged(
@@ -176,7 +184,9 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
 
   void DumpEvent(std::stringstream& stream, Event* event) {
     time_t now = time(nullptr);
-    stream << "Received at: " << ctime(&now);  // Returned string includes \n.
+    stream << "Received at: " << ctime(&now);  // Includes \n.
+    stream << "Received from: pid=" << event->GetBrowserInfo().pid
+           <<  " path=" << event->GetBrowserInfo().binary_path << std::endl;
 
     const content_analysis::sdk::ContentAnalysisRequest& request =
         event->GetRequest();
@@ -359,6 +369,13 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
     return content.find("block") != std::string::npos;
   }
 
+  void GetFileSpecificDelay(const std::string& content, unsigned long* delay) {
+    auto pos = content.find("delay=");
+    if (pos != std::string::npos) {
+      std::sscanf(content.substr(pos).c_str(), "delay=%lu", delay);
+    }
+  }
+
   unsigned long delay_;
   std::string print_data_file_path_;
 };
@@ -402,12 +419,11 @@ class QueuingHandler : public Handler {
 
       AtomicCout aout;
       aout.stream()  << std::endl << "----------" << std::endl;
-      aout.stream() << "Thread: " << std::this_thread::get_id() << std::endl;
-      aout.stream() << "Delaying request processing for "
-                    << handler->delay() << "s" << std::endl << std::endl;
+      aout.stream() << "Thread: " << std::this_thread::get_id()
+                    << std::endl;
       aout.flush();
 
-      handler->AnalyzeContent(aout.stream(), std::move(event));
+      handler->AnalyzeContent(aout, std::move(event));
     }
 
     return 0;
