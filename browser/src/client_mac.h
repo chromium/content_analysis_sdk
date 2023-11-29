@@ -20,6 +20,7 @@ class ClientMac : public ClientBase {
            ContentAnalysisResponse* response) override;
   int Acknowledge(const ContentAnalysisAcknowledgement& ack) override;
   int CancelRequests(const ContentAnalysisCancelRequests& cancel) override;
+  bool IsValid() override;
 };
 
 }  // namespace sdk

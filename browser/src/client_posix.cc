@@ -29,5 +29,9 @@ int ClientPosix::CancelRequests(const ContentAnalysisCancelRequests& cancel) {
   return -1;
 }
 
+bool ClientPosix::IsValid() {
+  return false;
+}
+
 }  // namespace sdk
 }  // namespace content_analysis

@@ -337,6 +337,22 @@ int ClientWin::CancelRequests(const ContentAnalysisCancelRequests& cancel) {
       ? 0 : -1;
 }
 
+bool ClientWin::IsValid() {
+  // The client is invalid if the pipe has not been created.
+  if (hPipe_ == INVALID_HANDLE_VALUE) {
+    return false;
+  }
+
+  // The client is invalid if the agent has changed since the client last
+  // connected.
+  unsigned long pid = 0;
+  if (!GetNamedPipeServerProcessId(hPipe_, &pid) || pid != agent_info().pid) {
+    return false;
+  }
+
+  return true;
+}
+
 // static
 DWORD ClientWin::ConnectToPipe(const std::string& pipename, HANDLE* handle) {
   // Get pointers to the Ntxxx functions.  This is required to use absolute

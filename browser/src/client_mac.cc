@@ -29,5 +29,9 @@ int ClientMac::CancelRequests(const ContentAnalysisCancelRequests& cancel) {
   return -1;
 }
 
+bool ClientMac::IsValid() {
+  return false;
+}
+
 }  // namespace sdk
 }  // namespace content_analysis

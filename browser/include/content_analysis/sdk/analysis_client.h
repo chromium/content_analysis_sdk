@@ -70,6 +70,10 @@ class Client {
   // that match.
   virtual int CancelRequests(const ContentAnalysisCancelRequests& cancel) = 0;
 
+  // Checks to see if the client is still valid.  For example, the client can
+  // become invalid if the pipe broke due to an agent restart.
+  virtual bool IsValid() = 0;
+
  protected:
   Client() = default;
   Client(const Client& rhs) = delete;
