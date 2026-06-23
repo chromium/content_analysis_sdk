@@ -177,6 +177,7 @@ message ContentAnalysisRequest {
     // Only possible for the `FILE_DOWNLOADED` analysis connector.
     NORMAL_DOWNLOAD = 6;
     SAVE_AS_DOWNLOAD = 7;
+    CLIPBOARD_COPY = 8;
   }
   optional Reason reason = 19;
 
