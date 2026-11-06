@@ -5,8 +5,11 @@ cmake_minimum_required(VERSION 3.22)
 
 project(chrome_enterprise_connector_local_analysis)
 
-# Ensure a C++14 compiler is used.
-set(CMAKE_CXX_STANDARD 14)
+# Ensure a C++14 compiler is used.  A newer standard may be requested on the
+# command line (-DCMAKE_CXX_STANDARD=17), which recent protobuf releases need.
+if(NOT DEFINED CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 14)
+endif()
 
 # Determine the operating system being targeted.
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
@@ -23,13 +26,18 @@ else()
   set(LINUX TRUE)
 endif()
 
-# Set the path to the protoc protobuf compiler.
+# Set the path to the protoc protobuf compiler.  prepare_build installs it
+# through vcpkg; without vcpkg the protoc found on PATH is used.
 if(WIN)
   set(PROTOC ${PROJECT_BINARY_DIR}/vcpkg/installed/x64-windows/tools/protobuf/protoc.exe)
 elseif(MAC)
   set(PROTOC ${PROJECT_BINARY_DIR}/vcpkg/installed/x64-osx/tools/protobuf/protoc)
 elseif(LINUX)
   set(PROTOC ${PROJECT_BINARY_DIR}/vcpkg/installed/x64-linux/tools/protobuf/protoc)
+endif()
+if(NOT EXISTS ${PROTOC})
+  find_program(SYSTEM_PROTOC protoc REQUIRED)
+  set(PROTOC ${SYSTEM_PROTOC})
 endif()
 
 # Calls the protoc compiler using the arguments specific to this project.
@@ -152,8 +160,11 @@ elseif(LINUX)
   )
 endif()
 
-# Makes available the package definitions in vcpkg.
-include("${PROJECT_BINARY_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake")
+# Makes available the package definitions in vcpkg when prepare_build
+# installed it; otherwise the system packages are used.
+if(EXISTS "${PROJECT_BINARY_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake")
+  include("${PROJECT_BINARY_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake")
+endif()
 find_package(Protobuf CONFIG REQUIRED)
 # Unit tests
 enable_testing()
