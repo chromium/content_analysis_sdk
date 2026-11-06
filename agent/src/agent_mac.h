@@ -5,20 +5,18 @@
 #ifndef CONTENT_ANALYSIS_SRC_AGENT_MAC_H_
 #define CONTENT_ANALYSIS_SRC_AGENT_MAC_H_
 
-#include "agent_base.h"
+#include "agent_posix.h"
 
 namespace content_analysis {
 namespace sdk {
 
-// Agent implementaton for macOS.
-class AgentMac : public AgentBase {
+// Agent implementation for macOS: the POSIX Unix domain socket agent with
+// the macOS per-user socket directory (see common/utils_posix.cc).
+class AgentMac : public AgentPosix {
  public:
-  AgentMac(Config config, std::unique_ptr<AgentEventHandler> handler);
-
-  ResultCode HandleEvents() override;
-  std::string DebugString() const override;
-
-  // TODO(rogerta): Fill in implementation.
+  AgentMac(Config config,
+           std::unique_ptr<AgentEventHandler> handler,
+           ResultCode* rc);
 };
 
 }  // namespace sdk

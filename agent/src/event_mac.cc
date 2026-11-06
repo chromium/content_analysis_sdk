@@ -2,28 +2,24 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "event_mac.h"
+#include <utility>
 
-#include "scoped_print_handle_mac.h"
+#include "event_mac.h"
 
 namespace content_analysis {
 namespace sdk {
 
 ContentAnalysisEventMac::ContentAnalysisEventMac(
     const BrowserInfo& browser_info,
-    ContentAnalysisRequest req)
-    : ContentAnalysisEventBase(browser_info) {
-  *request() = std::move(req);
-}
+    ContentAnalysisRequest request)
+    : ContentAnalysisEventPosix(browser_info, std::move(request)) {}
 
-ResultCode ContentAnalysisEventMac::Send() {
-  return ResultCode::ERR_UNEXPECTED;
-}
-
-std::string ContentAnalysisEventMac::DebugString() const {
-  return std::string();
-}
-
+ContentAnalysisEventMac::ContentAnalysisEventMac(
+    std::shared_ptr<ConnectionChannel> channel,
+    const BrowserInfo& browser_info,
+    ContentAnalysisRequest request)
+    : ContentAnalysisEventPosix(std::move(channel), browser_info,
+                                std::move(request)) {}
 
 }  // namespace sdk
 }  // namespace content_analysis

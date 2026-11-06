@@ -87,15 +87,24 @@ if(WIN)
     ./agent/src/event_win_unittest.cc
   )
 elseif(MAC)
+  # macOS shares the POSIX Unix domain socket transport and adds thin
+  # macOS-named classes on top of it.
   set(PLATFORM_AGENT_CODE
     ./agent/src/agent_mac.cc
     ./agent/src/agent_mac.h
+    ./agent/src/agent_posix.cc
+    ./agent/src/agent_posix.h
     ./agent/src/event_mac.cc
     ./agent/src/event_mac.h
+    ./agent/src/event_posix.cc
+    ./agent/src/event_posix.h
     ./agent/src/scoped_print_handle_mac.cc
     ./agent/src/scoped_print_handle_mac.h
+    ./common/utils_posix.cc
+    ./common/utils_posix.h
   )
   set(PLATFORM_TEST_CODE
+    ./agent/src/agent_posix_unittest.cc
     ./agent/src/event_mac_unittest.cc
   )
 elseif(LINUX)
@@ -106,8 +115,11 @@ elseif(LINUX)
     ./agent/src/event_posix.h
     ./agent/src/scoped_print_handle_posix.cc
     ./agent/src/scoped_print_handle_posix.h
+    ./common/utils_posix.cc
+    ./common/utils_posix.h
   )
   set(PLATFORM_TEST_CODE
+    ./agent/src/agent_posix_unittest.cc
     ./agent/src/event_posix_unittest.cc
   )
 endif()
@@ -126,11 +138,17 @@ elseif(MAC)
   set(PLATFORM_BROWSER_CODE
     ./browser/src/client_mac.cc
     ./browser/src/client_mac.h
+    ./browser/src/client_posix.cc
+    ./browser/src/client_posix.h
+    ./common/utils_posix.cc
+    ./common/utils_posix.h
   )
 elseif(LINUX)
   set(PLATFORM_BROWSER_CODE
     ./browser/src/client_posix.cc
     ./browser/src/client_posix.h
+    ./common/utils_posix.cc
+    ./common/utils_posix.h
   )
 endif()
 
