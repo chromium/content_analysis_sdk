@@ -5,22 +5,21 @@
 #ifndef CONTENT_ANALYSIS_SRC_EVENT_MAC_H_
 #define CONTENT_ANALYSIS_SRC_EVENT_MAC_H_
 
-#include "event_base.h"
+#include <memory>
+
+#include "event_posix.h"
 
 namespace content_analysis {
 namespace sdk {
 
-// ContentAnalysisEvent implementaton for macOS.
-class ContentAnalysisEventMac : public ContentAnalysisEventBase {
+// ContentAnalysisEvent implementation for macOS; identical to POSIX.
+class ContentAnalysisEventMac : public ContentAnalysisEventPosix {
  public:
   ContentAnalysisEventMac(const BrowserInfo& browser_info,
                           ContentAnalysisRequest request);
-
-  // ContentAnalysisEvent:
-  ResultCode Send() override;
-  std::string DebugString() const override;
-
-  // TODO(rogerta): Fill in implementation.
+  ContentAnalysisEventMac(std::shared_ptr<ConnectionChannel> channel,
+                          const BrowserInfo& browser_info,
+                          ContentAnalysisRequest request);
 };
 
 }  // namespace sdk

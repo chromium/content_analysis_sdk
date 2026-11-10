@@ -11,23 +11,11 @@ namespace sdk {
 
 // static
 std::unique_ptr<Client> Client::Create(Config config) {
-  return nullptr;
+  auto client = std::make_unique<ClientMac>(std::move(config));
+  return client->IsConnected() ? std::move(client) : nullptr;
 }
 
-ClientMac::ClientMac(Config config) : ClientBase(std::move(config)) {}
-
-int ClientMac::Send(ContentAnalysisRequest request,
-                    ContentAnalysisResponse* response) {
-  return -1;
-}
-
-int ClientMac::Acknowledge(const ContentAnalysisAcknowledgement& ack) {
-  return -1;
-}
-
-int ClientMac::CancelRequests(const ContentAnalysisCancelRequests& cancel) {
-  return -1;
-}
+ClientMac::ClientMac(Config config) : ClientPosix(std::move(config)) {}
 
 }  // namespace sdk
 }  // namespace content_analysis

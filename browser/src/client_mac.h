@@ -5,21 +5,17 @@
 #ifndef CONTENT_ANALYSIS_BROWSER_SRC_CLIENT_MAC_H_
 #define CONTENT_ANALYSIS_BROWSER_SRC_CLIENT_MAC_H_
 
-#include "client_base.h"
+#include "client_posix.h"
 
 namespace content_analysis {
 namespace sdk {
 
-// Client implementaton for macOS.
-class ClientMac : public ClientBase {
+// Client implementation for macOS.  macOS uses the same Unix domain socket
+// transport as Linux; only the per-user socket directory differs, and that
+// is handled in common/utils_posix.cc.
+class ClientMac : public ClientPosix {
  public:
-  ClientMac(Config config);
-
-  // Client:
-  int Send(ContentAnalysisRequest request,
-           ContentAnalysisResponse* response) override;
-  int Acknowledge(const ContentAnalysisAcknowledgement& ack) override;
-  int CancelRequests(const ContentAnalysisCancelRequests& cancel) override;
+  explicit ClientMac(Config config);
 };
 
 }  // namespace sdk

@@ -5,8 +5,11 @@ cmake_minimum_required(VERSION 3.22)
 
 project(chrome_enterprise_connector_local_analysis)
 
-# Ensure a C++14 compiler is used.
-set(CMAKE_CXX_STANDARD 14)
+# Ensure a C++14 compiler is used.  A newer standard may be requested on the
+# command line (-DCMAKE_CXX_STANDARD=17), which recent protobuf releases need.
+if(NOT DEFINED CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 14)
+endif()
 
 # Determine the operating system being targeted.
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
@@ -23,13 +26,18 @@ else()
   set(LINUX TRUE)
 endif()
 
-# Set the path to the protoc protobuf compiler.
+# Set the path to the protoc protobuf compiler.  prepare_build installs it
+# through vcpkg; without vcpkg the protoc found on PATH is used.
 if(WIN)
   set(PROTOC ${PROJECT_BINARY_DIR}/vcpkg/installed/x64-windows/tools/protobuf/protoc.exe)
 elseif(MAC)
   set(PROTOC ${PROJECT_BINARY_DIR}/vcpkg/installed/x64-osx/tools/protobuf/protoc)
 elseif(LINUX)
   set(PROTOC ${PROJECT_BINARY_DIR}/vcpkg/installed/x64-linux/tools/protobuf/protoc)
+endif()
+if(NOT EXISTS ${PROTOC})
+  find_program(SYSTEM_PROTOC protoc REQUIRED)
+  set(PROTOC ${SYSTEM_PROTOC})
 endif()
 
 # Calls the protoc compiler using the arguments specific to this project.
@@ -87,15 +95,24 @@ if(WIN)
     ./agent/src/event_win_unittest.cc
   )
 elseif(MAC)
+  # macOS shares the POSIX Unix domain socket transport and adds thin
+  # macOS-named classes on top of it.
   set(PLATFORM_AGENT_CODE
     ./agent/src/agent_mac.cc
     ./agent/src/agent_mac.h
+    ./agent/src/agent_posix.cc
+    ./agent/src/agent_posix.h
     ./agent/src/event_mac.cc
     ./agent/src/event_mac.h
+    ./agent/src/event_posix.cc
+    ./agent/src/event_posix.h
     ./agent/src/scoped_print_handle_mac.cc
     ./agent/src/scoped_print_handle_mac.h
+    ./common/utils_posix.cc
+    ./common/utils_posix.h
   )
   set(PLATFORM_TEST_CODE
+    ./agent/src/agent_posix_unittest.cc
     ./agent/src/event_mac_unittest.cc
   )
 elseif(LINUX)
@@ -106,8 +123,11 @@ elseif(LINUX)
     ./agent/src/event_posix.h
     ./agent/src/scoped_print_handle_posix.cc
     ./agent/src/scoped_print_handle_posix.h
+    ./common/utils_posix.cc
+    ./common/utils_posix.h
   )
   set(PLATFORM_TEST_CODE
+    ./agent/src/agent_posix_unittest.cc
     ./agent/src/event_posix_unittest.cc
   )
 endif()
@@ -126,16 +146,25 @@ elseif(MAC)
   set(PLATFORM_BROWSER_CODE
     ./browser/src/client_mac.cc
     ./browser/src/client_mac.h
+    ./browser/src/client_posix.cc
+    ./browser/src/client_posix.h
+    ./common/utils_posix.cc
+    ./common/utils_posix.h
   )
 elseif(LINUX)
   set(PLATFORM_BROWSER_CODE
     ./browser/src/client_posix.cc
     ./browser/src/client_posix.h
+    ./common/utils_posix.cc
+    ./common/utils_posix.h
   )
 endif()
 
-# Makes available the package definitions in vcpkg.
-include("${PROJECT_BINARY_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake")
+# Makes available the package definitions in vcpkg when prepare_build
+# installed it; otherwise the system packages are used.
+if(EXISTS "${PROJECT_BINARY_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake")
+  include("${PROJECT_BINARY_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake")
+endif()
 find_package(Protobuf CONFIG REQUIRED)
 # Unit tests
 enable_testing()
